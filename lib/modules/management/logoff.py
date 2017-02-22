@@ -14,13 +14,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : False,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': []
         }
 
@@ -37,13 +37,13 @@ class Module:
                 'Description'   :   'Switch. Log off all current users.',
                 'Required'      :   False,
                 'Value'         :   ''
-            },            
+            },
         }
 
         # save off a copy of the mainMenu object to access external functionality
         #   like listeners/agent handlers/etc.
         self.mainMenu = mainMenu
-        
+
         for param in params:
             # parameter format is [Name, Value]
             option, value = param
@@ -51,13 +51,18 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
-        
+    def generate(self, obfuscate=False, obfuscationCommand=""):
+
         allUsers = self.options['AllUsers']['Value']
 
         if allUsers.lower() == "true":
             script = "'Logging off all users.'; Start-Sleep -s 3; $null = (gwmi win32_operatingsystem).Win32Shutdown(4)"
         else:
             script = "'Logging off current user.'; Start-Sleep -s 3; shutdown /l /f"
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
 
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

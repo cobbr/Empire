@@ -1,3 +1,4 @@
+import os.path
 from lib.common import helpers
 
 class Module:
@@ -14,13 +15,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : True,
 
             'MinPSVersion' : '2',
-            
+
             'Comments': []
         }
 
@@ -36,12 +37,12 @@ class Module:
             'Folder' : {
                 'Description'   :   'Folder path to zip.',
                 'Required'      :   True,
-                'Value'         :   ''                
+                'Value'         :   ''
             },
             'ZipFileName' : {
                 'Description'   :   'Zip name/path to create.',
                 'Required'      :   True,
-                'Value'         :   ''                
+                'Value'         :   ''
             }
         }
 
@@ -56,8 +57,8 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
-        
+    def generate(self, obfuscate=False, obfuscationCommand=""):
+
         script = """
 function Invoke-ZipFolder
 {
@@ -68,7 +69,7 @@ function Invoke-ZipFolder
         return
     }
 
-    if (test-path $ZipFileName) { 
+    if (test-path $ZipFileName) {
         "Zip file already exists at $ZipFileName"
         return
     }
@@ -85,10 +86,14 @@ function Invoke-ZipFolder
     "Folder $Folder zipped to $ZipFileName"
 }
 Invoke-ZipFolder"""
-        
+
         for option,values in self.options.iteritems():
             if option.lower() != "agent":
                 if values['Value'] and values['Value'] != '':
-                    script += " -" + str(option) + " " + str(values['Value']) 
-    
+                    script += " -" + str(option) + " " + str(values['Value'])
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

