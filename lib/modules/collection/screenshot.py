@@ -15,13 +15,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : 'png',
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : True,
 
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'https://github.com/mattifestation/PowerSploit/blob/master/Exfiltration/Get-TimedScreenshot.ps1'
             ]
@@ -46,7 +46,7 @@ class Module:
         # save off a copy of the mainMenu object to access external functionality
         #   like listeners/agent handlers/etc.
         self.mainMenu = mainMenu
-        
+
         for param in params:
             # parameter format is [Name, Value]
             option, value = param
@@ -54,10 +54,10 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
-        
+    def generate(self, obfuscate=False, obfuscationCommand=""):
+
         script = """
-function Get-Screenshot 
+function Get-Screenshot
 {
     param
     (
@@ -113,4 +113,9 @@ Get-Screenshot"""
                     else:
                         script += " -" + str(option) + " " + str(values['Value'])
 
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

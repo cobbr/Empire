@@ -14,13 +14,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : True,
 
             'OpsecSafe' : False,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': [ ]
         }
 
@@ -46,11 +46,15 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
-        
+    def generate(self, obfuscate=False, obfuscationCommand=""):
+
         # command to disable RDP
         script = "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\" /v fDenyTSConnections /t REG_DWORD /d 1 /f;"
         # command to enable NLA only if the enable runs successfully
         script += " if ($?) { $null = reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp\" /v UserAuthentication /t REG_DWORD /d 1 /f }"
-
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

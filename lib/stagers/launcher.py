@@ -39,7 +39,17 @@ class Stager:
                 'Description'   :   'Switch. Base64 encode the output.',
                 'Required'      :   True,
                 'Value'         :   'True'
-            },            
+            },
+            'Obfuscate' : {
+                'Description'   :   'Switch. Obfuscate the launcher powershell code, uses the ObfuscateCommand for obfuscation types.',
+                'Required'      :   False,
+                'Value'         :   'False'
+            },
+            'ObfuscateCommand' : {
+                'Description'   :   'The Invoke-Obfuscation command to use. Only used if Obfuscate switch is True.',
+                'Required'      :   False,
+                'Value'         :   'Token,All,1,home,Encoding,3,home,Launcher,STDIN++,12467'
+            },
             'UserAgent' : {
                 'Description'   :   'User-agent string to use for the staging request (default, none, or other).',
                 'Required'      :   False,
@@ -73,6 +83,8 @@ class Stager:
         # extract all of our options
         listenerName = self.options['Listener']['Value']
         base64 = self.options['Base64']['Value']
+        obfuscate = self.options['Obfuscate']['Value']
+        obfuscateCommand = self.options['ObfuscateCommand']['Value']
         userAgent = self.options['UserAgent']['Value']
         proxy = self.options['Proxy']['Value']
         proxyCreds = self.options['ProxyCreds']['Value']
@@ -82,8 +94,12 @@ class Stager:
         if base64.lower() == "true":
             encode = True
 
+        invokeObfuscation = False
+        if obfuscate.lower() == "true":
+            invokeObfuscation = True
+
         # generate the launcher code
-        launcher = self.mainMenu.stagers.generate_launcher(listenerName, encode=encode, userAgent=userAgent, proxy=proxy, proxyCreds=proxyCreds, stagerRetries=stagerRetries)
+        launcher = self.mainMenu.stagers.generate_launcher(listenerName, encode=encode, obfuscate=invokeObfuscation, obfuscationCommand=obfuscateCommand, userAgent=userAgent, proxy=proxy, proxyCreds=proxyCreds, stagerRetries=stagerRetries)
 
         if launcher == "":
             print helpers.color("[!] Error in launcher command generation.")

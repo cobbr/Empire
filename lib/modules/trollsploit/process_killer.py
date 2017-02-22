@@ -15,13 +15,13 @@ class Module:
             'Background' : True,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : False,
 
             'MinPSVersion' : '2',
-            
+
             'Comments': [ ]
         }
 
@@ -62,7 +62,7 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
+    def generate(self, obfuscate=False, obfuscationCommand=""):
         
         script = """
 function Invoke-ProcessKiller {
@@ -86,7 +86,7 @@ function Invoke-ProcessKiller {
 
     while($true){
         Start-Sleep $Sleep
-        
+
         Get-Process $ProcessName | % {
             if (-not $Silent) {
                 "`n$ProcessName process started, killing..."
@@ -105,7 +105,12 @@ Invoke-ProcessKiller"""
                         # if we're just adding a switch
                         script += " -" + str(option)
                     else:
-                        script += " -" + str(option) + " " + str(values['Value']) 
-        
+                        script += " -" + str(option) + " " + str(values['Value'])
 
+
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

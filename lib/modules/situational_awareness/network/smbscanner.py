@@ -1,3 +1,4 @@
+import os.path
 from lib.common import helpers
 
 class Module:
@@ -14,13 +15,13 @@ class Module:
             'Background' : True,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : False,
 
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'https://gist.github.com/obscuresec/df5f652c7e7088e2412c'
             ]
@@ -38,7 +39,7 @@ class Module:
             'CredID' : {
                 'Description'   :   'CredID from the store to use.',
                 'Required'      :   False,
-                'Value'         :   ''                
+                'Value'         :   ''
             },
             'ComputerName' : {
                 'Description'   :   'Comma-separated hostnames to try username/password combinations against. Otherwise enumerate the domain for machines.',
@@ -73,11 +74,14 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
+    def generate(self, obfuscate=False, obfuscationCommand=""):
         
         # read in the common module source code
-        moduleSource = self.mainMenu.installPath + "/data/module_source/situational_awareness/network/Invoke-SmbScanner.ps1"
-
+        moduleSource = self.mainMenu.installPath + "/data/module_source/situational_awareness/network/Invoke-SMBScanner.ps1"
+        if obfuscate:
+            moduleSource = self.mainMenu.installPath + "/data/obfuscated_module_source/situational_awareness/network/Invoke-SMBScanner.ps1"
+            if not self.is_obfuscated():
+                self.obfuscate(obfuscationCommand=obfuscationCommand)
         try:
             f = open(moduleSource, 'r')
         except:
@@ -92,7 +96,7 @@ class Module:
         # if a credential ID is specified, try to parse
         credID = self.options["CredID"]['Value']
         if credID != "":
-            
+
             if not self.mainMenu.credentials.is_credential_valid(credID):
                 print helpers.color("[!] CredID is invalid!")
                 return ""
@@ -114,7 +118,7 @@ class Module:
         if (self.options['ComputerName']['Value'] != ''):
             usernames = "\"" + "\",\"".join(self.options['ComputerName']['Value'].split(",")) + "\""
             script += usernames + " | "
-        
+
         script += "Invoke-SMBScanner "
 
         for option,values in self.options.iteritems():
@@ -124,9 +128,39 @@ class Module:
                         # if we're just adding a switch
                         script += " -" + str(option)
                     else:
-                        script += " -" + str(option) + " '" + str(values['Value']) + "'" 
+                        script += " -" + str(option) + " '" + str(values['Value']) + "'"
 
         script += "| Out-String | %{$_ + \"`n\"};"
         script += "'Invoke-SMBScanner completed'"
 
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        if self.is_obfuscated() and not forceReobfuscation:
+            return
+
+        # read in the common module source code
+        moduleSource = self.mainMenu.installPath + "/data/module_source/situational_awareness/network/Invoke-SMBScanner.ps1"
+        try:
+            f = open(moduleSource, 'r')
+        except:
+            print helpers.color("[!] Could not read module source path at: " + str(moduleSource))
+            return ""
+
+        moduleCode = f.read()
+        f.close()
+
+        # obfuscate and write to obfuscated source path
+        obfuscatedSource = self.mainMenu.installPath + "/data/obfuscated_module_source/situational_awareness/network/Invoke-SMBScanner.ps1"
+        obfuscatedCode = helpers.obfuscate(psScript=moduleCode, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
+        try:
+            f = open(obfuscatedSource, 'w')
+        except:
+            print helpers.color("[!] Could not read obfuscated module source path at: " + str(obfuscatedSource))
+            return ""
+        f.write(obfuscatedCode)
+        f.close()
+
+    def is_obfuscated(self):
+        obfuscatedSource = self.mainMenu.installPath + "/data/obfuscated_module_source/situational_awareness/network/Invoke-SMBScanner.ps1"
+        return os.path.isfile(obfuscatedSource)

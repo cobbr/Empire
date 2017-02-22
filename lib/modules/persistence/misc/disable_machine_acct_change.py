@@ -15,13 +15,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : True,
 
             'OpsecSafe' : True,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': []
         }
 
@@ -52,12 +52,17 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
+    def generate(self, obfuscate=False, obfuscationCommand=""):
 
         cleanup = self.options['CleanUp']['Value']
-
+        script = ""
         if cleanup.lower() == 'true':
-            return "$null=Set-ItemProperty -Force -Path HKLM:\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters -Name DisablePasswordChange -Value 0; 'Machine account password change re-enabled.'"
+            script = "$null=Set-ItemProperty -Force -Path HKLM:\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters -Name DisablePasswordChange -Value 0; 'Machine account password change re-enabled.'"
+        else:
+            script = "$null=Set-ItemProperty -Force -Path HKLM:\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters -Name DisablePasswordChange -Value 1; 'Machine account password change disabled.'"
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
+        return script
 
-        return "$null=Set-ItemProperty -Force -Path HKLM:\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters -Name DisablePasswordChange -Value 1; 'Machine account password change disabled.'"
-
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

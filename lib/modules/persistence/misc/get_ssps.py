@@ -1,3 +1,4 @@
+import os.path
 from lib.common import helpers
 
 class Module:
@@ -14,13 +15,13 @@ class Module:
             'Background' : True,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : True,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'https://github.com/mattifestation/PowerSploit/blob/master/Persistence/Persistence.psm1'
             ]
@@ -40,7 +41,7 @@ class Module:
         # save off a copy of the mainMenu object to access external functionality
         #   like listeners/agent handlers/etc.
         self.mainMenu = mainMenu
-        
+
         for param in params:
             # parameter format is [Name, Value]
             option, value = param
@@ -48,7 +49,7 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
+    def generate(self, obfuscate=False, obfuscationCommand=""):
 
         script = """
 function Get-SecurityPackages
@@ -187,6 +188,11 @@ Get-SecurityPackages
         for option,values in self.options.iteritems():
             if option.lower() != "agent":
                 if values['Value'] and values['Value'] != '':
-                    script += " -" + str(option) + " " + str(values['Value']) 
+                    script += " -" + str(option) + " " + str(values['Value'])
 
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

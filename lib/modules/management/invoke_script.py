@@ -14,13 +14,13 @@ class Module:
             'Background' : True,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : True,
 
             'MinPSVersion' : '2',
-            
+
             'Comments': []
         }
 
@@ -56,8 +56,8 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
-        
+    def generate(self, obfuscate=False, obfuscationCommand=""):
+
         scriptPath = self.options['ScriptPath']['Value']
         scriptCmd = self.options['ScriptCmd']['Value']
         script = ''
@@ -74,5 +74,9 @@ class Module:
             script += '\n'
 
         script += "%s" %(scriptCmd)
-
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

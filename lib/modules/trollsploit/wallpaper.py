@@ -15,13 +15,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : False,
 
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'https://social.technet.microsoft.com/forums/scriptcenter/en-US/9af1769e-197f-4ef3-933f-83cb8f065afb/background-change'
             ]
@@ -54,7 +54,7 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
+    def generate(self, obfuscate=False, obfuscationCommand=""):
         
         # Set-ItemProperty -Path 'HKCU:\\Control Panel\\Desktop\\' -Name wallpaper -Value $SavePath
         # rundll32.exe user32.dll, UpdatePerUserSystemParameters
@@ -87,27 +87,27 @@ namespace Wallpaper
 
    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
    private static extern int SystemParametersInfo (int uAction, int uParam, string lpvParam, int fuWinIni);
-   
+
    public static void SetWallpaper ( string path, Wallpaper.Style style ) {
      SystemParametersInfo( SetDesktopWallpaper, 0, path, UpdateIniFile | SendWinIniChange );
-     
+
      RegistryKey key = Registry.CurrentUser.OpenSubKey("Control Panel\\\\Desktop", true);
      switch( style )
      {
        case Style.Stretched :
-         key.SetValue(@"WallpaperStyle", "2") ; 
+         key.SetValue(@"WallpaperStyle", "2") ;
          key.SetValue(@"TileWallpaper", "0") ;
          break;
        case Style.Centered :
-         key.SetValue(@"WallpaperStyle", "1") ; 
-         key.SetValue(@"TileWallpaper", "0") ; 
+         key.SetValue(@"WallpaperStyle", "1") ;
+         key.SetValue(@"TileWallpaper", "0") ;
          break;
        case Style.Tiled :
-         key.SetValue(@"WallpaperStyle", "1") ; 
+         key.SetValue(@"WallpaperStyle", "1") ;
          key.SetValue(@"TileWallpaper", "1") ;
          break;
        case Style.Fit :
-         key.SetValue(@"WallpaperStyle", "6") ; 
+         key.SetValue(@"WallpaperStyle", "6") ;
          key.SetValue(@"TileWallpaper", "0") ;
          break;
      }
@@ -115,7 +115,7 @@ namespace Wallpaper
    }
   }
 }
-"@ 
+"@
 
     $null = [Wallpaper.Setter]::SetWallpaper( (Convert-Path $SavePath), "Fit" )
 } Set-Wallpaper"""
@@ -138,7 +138,12 @@ namespace Wallpaper
         else:
             print helpers.color("[!] Please specify a valid local image path.")
             return ""
-        
+
         script += "; 'Set-Wallpaper executed'"
 
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

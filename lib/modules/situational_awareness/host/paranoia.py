@@ -1,3 +1,4 @@
+import os.path
 from lib.common import helpers
 
 class Module:
@@ -7,9 +8,9 @@ class Module:
         # metadata info about the module, not modified during runtime
         self.info = {
             'Name': 'Invoke-Paranoia',
-            
+
             'Author': ['pasv'],
-            
+
             'Description': ('Continuously check running processes for the presence of suspicious users, members of groups, process names, and for any processes running off of USB drives.'),
 
             'Background' : True,
@@ -19,9 +20,9 @@ class Module:
             'NeedsAdmin' : True,
 
             'OpsecSafe' : True,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                  'http://shell.fishing/code/Invoke-Paranoia.ps1'
             ]
@@ -70,11 +71,15 @@ class Module:
                     self.options[option]['Value'] = value
 
 
-    def generate(self):
+    def generate(self, obfuscate=False, obfuscationCommand=""):
         # if you're reading in a large, external script that might be updates,
         #   use the pattern below
         # read in the common module source code
         moduleSource = self.mainMenu.installPath + "/data/module_source/situational_awareness/host/Invoke-Paranoia.ps1"
+        if obfuscate:
+            moduleSource = self.mainMenu.installPath + "/data/obfuscated_module_source/situational_awareness/host/Invoke-Paranoia.ps1"
+            if not self.is_obfuscated():
+                self.obfuscate(obfuscationCommand=obfuscationCommand)
         try:
             f = open(moduleSource, 'r')
         except:
@@ -99,3 +104,33 @@ class Module:
                         script += " -" + str(option) + " " + str(values['Value'])
 
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        if self.is_obfuscated() and not forceReobfuscation:
+            return
+
+        # read in the common module source code
+        moduleSource = self.mainMenu.installPath + "/data/module_source/situational_awareness/host/Invoke-Paranoia.ps1"
+        try:
+            f = open(moduleSource, 'r')
+        except:
+            print helpers.color("[!] Could not read module source path at: " + str(moduleSource))
+            return ""
+
+        moduleCode = f.read()
+        f.close()
+
+        # obfuscate and write to obfuscated source path
+        obfuscatedSource = self.mainMenu.installPath + "/data/obfuscated_module_source/situational_awareness/host/Invoke-Paranoia.ps1"
+        obfuscatedCode = helpers.obfuscate(psScript=moduleCode, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
+        try:
+            f = open(obfuscatedSource, 'w')
+        except:
+            print helpers.color("[!] Could not read obfuscated module source path at: " + str(obfuscatedSource))
+            return ""
+        f.write(obfuscatedCode)
+        f.close()
+
+    def is_obfuscated(self):
+        obfuscatedSource = self.mainMenu.installPath + "/data/obfuscated_module_source/situational_awareness/host/Invoke-Paranoia.ps1"
+        return os.path.isfile(obfuscatedSource)

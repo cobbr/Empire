@@ -16,13 +16,13 @@ class Module:
             'Background' : True,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : False,
 
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'https://github.com/obscuresec/shmoocon/blob/master/Invoke-TwitterBot'
             ]
@@ -55,8 +55,8 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
-        
+    def generate(self, obfuscate=False, obfuscationCommand=""):
+
         script = """
 Function Invoke-Thunderstruck
 {
@@ -66,9 +66,9 @@ Function Invoke-Thunderstruck
         [ValidateNotNullOrEmpty()]
         [String] $VideoURL = "https://www.youtube.com/watch?v=leJ_wj7mDa0"
     )
-    
+
     Function Set-Speaker($Volume){$wshShell = new-object -com wscript.shell;1..50 | % {$wshShell.SendKeys([char]174)};1..$Volume | % {$wshShell.SendKeys([char]175)}}
-    Set-Speaker -Volume 50   
+    Set-Speaker -Volume 50
 
     #Create hidden IE Com Object
     $IEComObject = New-Object -com "InternetExplorer.Application"
@@ -98,4 +98,9 @@ Function Invoke-Thunderstruck
 
         script += "; 'Agent Thunderstruck.'"
 
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

@@ -14,13 +14,13 @@ class Module:
             'Background' : True,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : True,
 
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'http://blog.powershell.no/2011/06/12/use-windows-powershell-to-get-antivirus-product-information/'
             ]
@@ -45,7 +45,7 @@ class Module:
         # save off a copy of the mainMenu object to access external functionality
         #   like listeners/agent handlers/etc.
         self.mainMenu = mainMenu
-        
+
         for param in params:
             # parameter format is [Name, Value]
             option, value = param
@@ -53,35 +53,35 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
-        
+    def generate(self, obfuscate=False, obfuscationCommand=""):
+
         script = """
-function Get-AntiVirusProduct { 
-      [CmdletBinding()] 
-      param ( 
-      [parameter(ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)] 
-      [Alias('name')] 
+function Get-AntiVirusProduct {
+      [CmdletBinding()]
+      param (
+      [parameter(ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
+      [Alias('name')]
       $ComputerName=$env:computername )
       $Query = 'select * from AntiVirusProduct'
       $AntivirusProduct = Get-WmiObject -Namespace 'root\SecurityCenter2' -Query $Query @psboundparameters -ErrorVariable myError -ErrorAction 'SilentlyContinue'
-      switch ($AntiVirusProduct.productState) { 
-          '262144' {$defstatus = 'Up to date' ;$rtstatus  = 'Disabled'} 
-          '262160' {$defstatus = 'Out of date' ;$rtstatus = 'Disabled'} 
-          '266240' {$defstatus = 'Up to date' ;$rtstatus  = 'Enabled'} 
-          '266256' {$defstatus = 'Out of date' ;$rtstatus = 'Enabled'} 
-          '393216' {$defstatus = 'Up to date' ;$rtstatus  = 'Disabled'} 
-          '393232' {$defstatus = 'Out of date' ;$rtstatus = 'Disabled'} 
-          '393488' {$defstatus = 'Out of date' ;$rtstatus = 'Disabled'} 
-          '397312' {$defstatus = 'Up to date' ;$rtstatus  = 'Enabled'} 
-          '397328' {$defstatus = 'Out of date' ;$rtstatus = 'Enabled'} 
-          '397584' {$defstatus = 'Out of date' ;$rtstatus = 'Enabled'} 
-          default {$defstatus = 'Unknown' ;$rtstatus = 'Unknown'} 
+      switch ($AntiVirusProduct.productState) {
+          '262144' {$defstatus = 'Up to date' ;$rtstatus  = 'Disabled'}
+          '262160' {$defstatus = 'Out of date' ;$rtstatus = 'Disabled'}
+          '266240' {$defstatus = 'Up to date' ;$rtstatus  = 'Enabled'}
+          '266256' {$defstatus = 'Out of date' ;$rtstatus = 'Enabled'}
+          '393216' {$defstatus = 'Up to date' ;$rtstatus  = 'Disabled'}
+          '393232' {$defstatus = 'Out of date' ;$rtstatus = 'Disabled'}
+          '393488' {$defstatus = 'Out of date' ;$rtstatus = 'Disabled'}
+          '397312' {$defstatus = 'Up to date' ;$rtstatus  = 'Enabled'}
+          '397328' {$defstatus = 'Out of date' ;$rtstatus = 'Enabled'}
+          '397584' {$defstatus = 'Out of date' ;$rtstatus = 'Enabled'}
+          default {$defstatus = 'Unknown' ;$rtstatus = 'Unknown'}
           }
-      $ht = @{} 
-      $ht.Computername = $ComputerName 
-      $ht.Name = $AntiVirusProduct.displayName 
-      $ht.ProductExecutable = $AntiVirusProduct.pathToSignedProductExe 
-      $ht.'Definition Status' = $defstatus 
+      $ht = @{}
+      $ht.Computername = $ComputerName
+      $ht.Name = $AntiVirusProduct.displayName
+      $ht.ProductExecutable = $AntiVirusProduct.pathToSignedProductExe
+      $ht.'Definition Status' = $defstatus
       $ht.'Real-time Protection Status' = $rtstatus
       New-Object -TypeName PSObject -Property $ht
 }
@@ -98,5 +98,9 @@ Get-AntiVirusProduct """
                         script += " -" + str(option) + " " + str(values['Value'])
 
         script += ' | Out-String | %{$_ + \"`n\"};"`n'+str(self.info["Name"])+' completed!";'
-
+        if obfuscate:
+            script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
         return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return

