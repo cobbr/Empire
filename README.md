@@ -1,3 +1,9 @@
+# ObfuscatedEmpire
+
+ObfuscatedEmpire is a fork of [Empire](https://github.com/EmpireProject/Empire) with [Invoke-Obfuscation](https://github.com/danielbohannon/Invoke-Obufscation) integrated directly into it's functionality. The main advantage of ObfuscatedEmpire is the ability to establish an in-memory C2 channel that automatically obfuscates all PowerShell run on a target host, which can often help evade AV signatures. For more details on motivations behind the project and to see how it works please refer to [my blog post about it](https://cobbr.io/ObfuscatedEmpire.html).
+
+ObfuscatedEmpire works exactly the same as Empire with added, optional obfuscation settings. All documentation shown below is for Empire. Bug reports are appreciated! Please report any obfuscation-related problems with ObfuscatedEmpire as a Github issue.
+
 # Empire
 
 Empire is a pure PowerShell post-exploitation agent built on cryptologically-secure communications and a flexible architecture. Empire implements the ability to run PowerShell agents without needing powershell.exe, rapidly deployable post-exploitation modules ranging from key loggers to Mimikatz, and adaptable communications to evade network detection, all wrapped up in a usability-focused framework. It premiered at [BSidesLV in 2015](https://www.youtube.com/watch?v=Pq9t59w0mUI).
