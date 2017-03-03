@@ -1306,8 +1306,8 @@ http://www.danielbohannon.com
 
     # Function name declarations are CommandArgument tokens that cannot be obfuscated with concatenations.
     # For these we will obfuscated them with ticks because this changes the string from AMSI's perspective but not the final functionality.
-    If($ScriptString.SubString(0,$Token.Start-1).Trim().ToLower().EndsWith('function'))
-    #If($ScriptString.SubString(0,$Token.Start-1).Trim().ToLower().EndsWith('function') -or $ScriptString.SubString(0,$Token.Start-1).Trim().ToLower().EndsWith('filter'))
+    # If($ScriptString.SubString(0,$Token.Start-1).Trim().ToLower().EndsWith('function'))
+    If($ScriptString.SubString(0,$Token.Start-1).Trim().ToLower().EndsWith('function') -or $ScriptString.SubString(0,$Token.Start-1).Trim().ToLower().EndsWith('filter'))
     {
         $ScriptString = Out-ObfuscatedWithTicks $ScriptString $Token
         Return $ScriptString
