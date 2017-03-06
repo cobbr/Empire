@@ -33,6 +33,7 @@ elif lsb_release -d | grep -q "Kali"; then
             rm libssl1.0.0_1.0.1t-1+deb8u6_amd64.deb
 	    rm powershell_6.0.0-alpha.16-1ubuntu1.16.04.1_amd64.deb
         fi
+        mkdir -p /usr/local/share/powershell/Modules
         cp -r ../lib/powershell/Invoke-Obfuscation /usr/local/share/powershell/Modules
 elif lsb_release -d | grep -q "Ubuntu"; then
 	Release=Ubuntu

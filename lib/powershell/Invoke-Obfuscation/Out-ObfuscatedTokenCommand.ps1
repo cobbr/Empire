@@ -128,7 +128,7 @@ http://www.danielbohannon.com
         # Run 'Comment' first since it will be the least number of tokens to iterate through, and comments may be introduced as obfuscation technique in future revisions.
         $ObfuscationTypeOrder += 'Comment'
         # Run 'String' second since otherwise we will have unnecessary command bloat since other obfuscation functions create additional strings.
-        # $ObfuscationTypeOrder += 'String'
+        $ObfuscationTypeOrder += 'String'
         $ObfuscationTypeOrder += (Get-Random -Input $ObfuscationChoices -Count $ObfuscationChoices.Count)
 
         # Apply each randomly-ordered $ObfuscationType from above step.
@@ -256,8 +256,8 @@ http://www.danielbohannon.com
             $Counter--
 
             # Set valid obfuscation levels for current token type.
-            # $ValidObfuscationLevels = @(0,1,2,3,4)
-            $ValidObfuscationLevels = @(0,1,2)
+            $ValidObfuscationLevels = @(0,1,2,3,4)
+            
             # If invalid obfuscation level is passed to this function then default to highest obfuscation level available for current token type.
             If($ValidObfuscationLevels -NotContains $ObfuscationLevel) {$ObfuscationLevel = $ValidObfuscationLevels | Sort-Object -Descending | Select-Object -First 1}
 
@@ -1306,8 +1306,8 @@ http://www.danielbohannon.com
 
     # Function name declarations are CommandArgument tokens that cannot be obfuscated with concatenations.
     # For these we will obfuscated them with ticks because this changes the string from AMSI's perspective but not the final functionality.
-    # If($ScriptString.SubString(0,$Token.Start-1).Trim().ToLower().EndsWith('function'))
-    If($ScriptString.SubString(0,$Token.Start-1).Trim().ToLower().EndsWith('function') -or $ScriptString.SubString(0,$Token.Start-1).Trim().ToLower().EndsWith('filter'))
+    If($ScriptString.SubString(0,$Token.Start-1).Trim().ToLower().EndsWith('function'))
+    #If($ScriptString.SubString(0,$Token.Start-1).Trim().ToLower().EndsWith('function') -or $ScriptString.SubString(0,$Token.Start-1).Trim().ToLower().EndsWith('filter'))
     {
         $ScriptString = Out-ObfuscatedWithTicks $ScriptString $Token
         Return $ScriptString

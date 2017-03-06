@@ -239,7 +239,7 @@ http://www.danielbohannon.com
     $InvokeExpressionSyntax += $InvocationOperator + "( `$env:ComSpec[4," + (Get-Random -Input @(15,24,26)) + ",25]-Join'')"
     $InvokeExpressionSyntax += $InvocationOperator + "((" + (Get-Random -Input @('Get-Variable','GV','Variable')) + " '*mdr*').Name[3,11,2]-Join'')"
     $InvokeExpressionSyntax += $InvocationOperator + "( " + (Get-Random -Input @('$VerbosePreference.ToString()','([String]$VerbosePreference)')) + "[1,3]+'x'-Join'')"
-    
+
     # Randomly choose from above invoke operation syntaxes.
     $InvokeExpression = (Get-Random -Input $InvokeExpressionSyntax)
 
@@ -343,12 +343,12 @@ http://www.danielbohannon.com
         # Build up the full command-line string.
         If($PSBoundParameters['Wow64'])
         {
-            $CommandLineOutput = "$($Env:windir)\SysWOW64\WindowsPowerShell\v1.0\powershell.exe $($CommandlineOptions) `"$NewScript`""
+            $CommandLineOutput = "C:\WINDOWS\SysWOW64\WindowsPowerShell\v1.0\powershell.exe $($CommandlineOptions) `"$NewScript`""
         }
         Else
         {
             # Obfuscation isn't about saving space, and there are reasons you'd potentially want to fully path powershell.exe (more info on this soon).
-            #$CommandLineOutput = "$($Env:windir)\System32\WindowsPowerShell\v1.0\powershell.exe $($CommandlineOptions) `"$NewScript`""
+            #$CommandLineOutput = "C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe $($CommandlineOptions) `"$NewScript`""
             $CommandLineOutput = "powershell $($CommandlineOptions) `"$NewScript`""
         }
 
