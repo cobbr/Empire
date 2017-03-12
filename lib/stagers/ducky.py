@@ -95,6 +95,8 @@ class Stager:
             print helpers.color("[!] Error in launcher command generation.")
             return ""
         else:
+            enc = launcher.split(" ")[-1]
+
             duckyCode =  "DELAY 3000\n"
             duckyCode += "GUI r\n"
             duckyCode += "DELAY 1000\n"

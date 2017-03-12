@@ -562,7 +562,7 @@ class MainMenu(cmd.Cmd):
             elif parts[0].lower() == "obfuscate_command":
                 self.obfuscateCommand = parts[1]
             else:
-                print helpers.color("[!] Please choose 'ip_whitelist', 'ip_blacklist', or 'obfuscate'")
+                print helpers.color("[!] Please choose 'ip_whitelist', 'ip_blacklist', 'obfuscate', or 'obfuscate_command'")
 
 
     def do_reset(self, line):
@@ -726,6 +726,7 @@ class MainMenu(cmd.Cmd):
                 print helpers.color("[*] Obfuscating module: " + module + "...")
                 self.modules.modules[module].obfuscate(obfuscationCommand=self.obfuscateCommand, forceReobfuscation=reobfuscate)
                 print helpers.color("[*] Obfuscation complete.")
+
     def complete_usemodule(self, text, line, begidx, endidx):
         "Tab-complete an Empire PowerShell module path."
 
@@ -2339,7 +2340,6 @@ class ListenerMenu(cmd.Cmd):
                 stager.options['Obfuscate']['Value'] = "True"
             else:
                 stager.options['Obfuscate']['Value'] = "False"
-            stager.options['ObfuscateCommand']['Value'] = self.mainMenu.obfuscateCommand
             # and generate the code
             print stager.generate()
         else:

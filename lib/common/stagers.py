@@ -279,7 +279,7 @@ class Stagers:
         return server + checksum
 
 
-    def generate_launcher(self, listenerName, encode=True, obfuscate=False, obfuscationCommand="",userAgent="default", proxy="default", proxyCreds="default", stagerRetries="0"):
+    def generate_launcher(self, listenerName, encode=True, obfuscate=False, obfuscationCommand="", userAgent="default", proxy="default", proxyCreds="default", stagerRetries="0"):
         """
         Generate the initial IEX download cradle with a specified
         c2 server and a valid HTTP checksum.
