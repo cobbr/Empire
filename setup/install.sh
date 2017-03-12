@@ -43,6 +43,17 @@ elif lsb_release -d | grep -q "Ubuntu"; then
 	pip install pydispatcher
 	pip install flask
 	pip install pyOpenSSL
+        if ! which powershell > /dev/null; then
+            wget http://security.debian.org/debian-security/pool/updates/main/o/openssl/libssl1.0.0_1.0.1t-1+deb8u6_amd64.deb
+            dpkg -i libssl1.0.0_1.0.1t-1+deb8u6_amd64.deb
+            wget https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-alpha.16/powershell_6.0.0-alpha.16-1ubuntu1.16.04.1_amd64.deb
+            dpkg -i powershell_6.0.0-alpha.16-1ubuntu1.16.04.1_amd64.deb
+            apt-get install -f -y
+            rm libssl1.0.0_1.0.1t-1+deb8u6_amd64.deb
+            rm powershell_6.0.0-alpha.16-1ubuntu1.16.04.1_amd64.deb
+        fi
+        mkdir -p /usr/local/share/powershell/Modules
+        cp -r ../lib/powershell/Invoke-Obfuscation /usr/local/share/powershell/Modules
 else
 	echo "Unknown distro - Debian/Ubuntu Fallback"
 	 apt-get install -y python-dev python-m2crypto swig python-pip libssl-dev
@@ -51,6 +62,17 @@ else
 	 pip install pydispatcher
 	 pip install flask
 	 pip install pyOpenSSL
+        if ! which powershell > /dev/null; then
+            wget http://security.debian.org/debian-security/pool/updates/main/o/openssl/libssl1.0.0_1.0.1t-1+deb8u6_amd64.deb
+            dpkg -i libssl1.0.0_1.0.1t-1+deb8u6_amd64.deb
+            wget https://github.com/PowerShell/PowerShell/releases/download/v6.0.0-alpha.16/powershell_6.0.0-alpha.16-1ubuntu1.16.04.1_amd64.deb
+            dpkg -i powershell_6.0.0-alpha.16-1ubuntu1.16.04.1_amd64.deb
+            apt-get install -f -y
+            rm libssl1.0.0_1.0.1t-1+deb8u6_amd64.deb
+            rm powershell_6.0.0-alpha.16-1ubuntu1.16.04.1_amd64.deb
+        fi
+        mkdir -p /usr/local/share/powershell/Modules
+        cp -r ../lib/powershell/Invoke-Obfuscation /usr/local/share/powershell/Modules
 fi
 
 # set up the database schema
