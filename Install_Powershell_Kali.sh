@@ -1,6 +1,4 @@
 #!/bin/bash
-apt-get update
-apt-get upgrade -y
 wget http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu55_55.1-7ubuntu0.1_amd64.deb
 dpkg -i dpkg -i libicu55_55.1-7ubuntu0.1_amd64.deb
 apt-get install -f
