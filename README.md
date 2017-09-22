@@ -1,3 +1,5 @@
+**This project has been merged upstream [to the main Empire project](https://github.com/EmpireProject/Empire). You should probably be using that. This repository will remain here for now, but is not guaranteed to remain updated or stable.**
+
 # ObfuscatedEmpire
 
 ObfuscatedEmpire is a fork of [Empire](https://github.com/EmpireProject/Empire) with [Invoke-Obfuscation](https://github.com/danielbohannon/Invoke-Obfuscation) integrated directly into it's functionality. The main advantage of ObfuscatedEmpire is the ability to establish an in-memory C2 channel that automatically obfuscates all PowerShell run on a target host, which can often help evade AV signatures. For more details on motivations behind the project and to see how it works please refer to [the introductory blog post about it](https://cobbr.io/ObfuscatedEmpire.html) and [the post about the latest updates](https://cobbr.io/ObfuscatedEmpire-Updates.html).
