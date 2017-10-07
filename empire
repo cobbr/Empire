@@ -7,6 +7,7 @@ from time import localtime, strftime, sleep
 from OpenSSL import SSL
 from Crypto.Random import random
 import ssl
+
 # Empire imports
 from lib.common import empire
 from lib.common import helpers
@@ -167,13 +168,18 @@ def start_restful_api(empireMenu, suppress=False, username=None, password=None, 
         username = dbUsername
     else:
         execute_db_query(conn, "UPDATE config SET api_username=?", username)
+        username = username[0]
 
     if not password:
         password = dbPassword
     else:
         execute_db_query(conn, "UPDATE config SET api_password=?", password)
+        password = password[0]
+
 
     print ''
+
+
 
     print " * Starting Empire RESTful API on port: %s" %(port)
 
@@ -1120,7 +1126,7 @@ def start_restful_api(empireMenu, suppress=False, username=None, password=None, 
         # try to prevent some basic bruting
         time.sleep(2)
 
-        if suppliedUsername == username[0] and suppliedPassword == password[0]:
+        if suppliedUsername == username and suppliedPassword == password:
             return jsonify({'token': apiToken})
         else:
             return make_response('', 401)
@@ -1153,7 +1159,7 @@ def start_restful_api(empireMenu, suppress=False, username=None, password=None, 
         return jsonify({'success': True})
 
 
-    if not os.path.exists('./data/empire.pem'):
+    if not os.path.exists('./data/empire-chain.pem'):
         print "[!] Error: cannot find certificate ./data/empire.pem"
         sys.exit()
 
@@ -1213,6 +1219,7 @@ def start_restful_api(empireMenu, suppress=False, username=None, password=None, 
         signal.signal(signal.SIGINT, signal.default_int_handler)
         sys.exit()
 
+
     try:
         signal.signal(signal.SIGINT, signal_handler)
     except ValueError:
@@ -1257,7 +1264,7 @@ if __name__ == '__main__':
         print empire.VERSION
 
     elif args.rest:
-        # start an Empire instance and RESTful API
+         # start an Empire instance and RESTful API
         main = empire.MainMenu(args=args)
         def thread_api(empireMenu):
             while serverExitCommand == 'restart':
@@ -1280,7 +1287,7 @@ if __name__ == '__main__':
                 start_restful_api(empireMenu=main, suppress=True, username=args.username, password=args.password, port=args.restport)
             except SystemExit as e:
                 pass
-
+                
     else:
         # normal execution
         main = empire.MainMenu(args=args)

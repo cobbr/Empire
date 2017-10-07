@@ -20,6 +20,7 @@ import os
 import hashlib
 import time
 import fnmatch
+import shlex
 
 # Empire imports
 import helpers
@@ -459,10 +460,10 @@ class MainMenu(cmd.Cmd):
         if filterTerm == "":
             creds = self.credentials.get_credentials()
 
-        elif filterTerm.split()[0].lower() == "add":
+        elif shlex.split(filterTerm)[0].lower() == "add":
 
             # add format: "domain username password <notes> <credType> <sid>
-            args = filterTerm.split()[1:]
+            args = shlex.split(filterTerm)[1:]
 
             if len(args) == 3:
                 domain, username, password = args
@@ -493,10 +494,10 @@ class MainMenu(cmd.Cmd):
 
             creds = self.credentials.get_credentials()
 
-        elif filterTerm.split()[0].lower() == "remove":
+        elif shlex.split(filterTerm)[0].lower() == "remove":
 
             try:
-                args = filterTerm.split()[1:]
+                args = shlex.split(filterTerm)[1:]
                 if len(args) != 1:
                     print helpers.color("[!] Format is 'remove <credID>/<credID-credID>/all'")
                 else:
@@ -522,8 +523,8 @@ class MainMenu(cmd.Cmd):
             return
 
 
-        elif filterTerm.split()[0].lower() == "export":
-            args = filterTerm.split()[1:]
+        elif shlex.split(filterTerm)[0].lower() == "export":
+            args = shlex.split(filterTerm)[1:]
 
             if len(args) != 1:
                 print helpers.color("[!] Please supply an output filename/filepath.")
@@ -532,13 +533,13 @@ class MainMenu(cmd.Cmd):
                 self.credentials.export_credentials(args[0])
                 return
 
-        elif filterTerm.split()[0].lower() == "plaintext":
+        elif shlex.split(filterTerm)[0].lower() == "plaintext":
             creds = self.credentials.get_credentials(credtype="plaintext")
 
-        elif filterTerm.split()[0].lower() == "hash":
+        elif shlex.split(filterTerm)[0].lower() == "hash":
             creds = self.credentials.get_credentials(credtype="hash")
 
-        elif filterTerm.split()[0].lower() == "krbtgt":
+        elif shlex.split(filterTerm)[0].lower() == "krbtgt":
             creds = self.credentials.get_krbtgt()
 
         else:
@@ -1465,7 +1466,6 @@ class PowerShellAgentMenu(cmd.Cmd):
         """
         Handle agent event signals.
         """
-
         if '[!] Agent' in signal and 'exiting' in signal:
             pass
 
@@ -1476,7 +1476,17 @@ class PowerShellAgentMenu(cmd.Cmd):
             # while we are interacting with it
             results = self.mainMenu.agents.get_agent_results_db(self.sessionID)
             if results:
-                print "\n" + results
+		if sender == "AgentsPsKeyLogger" and ("Job started:" not in results) and ("killed." not in results):
+            	    safePath = os.path.abspath("%sdownloads/" % self.mainMenu.installPath)
+		    savePath = "%sdownloads/%s/keystrokes.txt" % (self.mainMenu.installPath,self.sessionID)
+		    if not os.path.abspath(savePath).startswith(safePath):
+                        dispatcher.send("[!] WARNING: agent %s attempted skywalker exploit!" % (self.sessionID), sender='Agents')
+                 	return
+		    with open(savePath,"a+") as f:
+			new_results = results.replace("\r\n","").replace("[SpaceBar]", "").replace('\b', '').replace("[Shift]", "").replace("[Enter]\r","\r\n")
+		        f.write(new_results)
+		else:
+                   print "\n" + results
 
         elif "[+] Part of file" in signal and "saved" in signal:
             if (str(self.sessionID) in signal) or (str(name) in signal):
