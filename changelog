@@ -1,8 +1,45 @@
-Running
+10/29/2017
+------------
+- Version 2.3 Master Release
+	— Fix for #755
+	— Merge PR from byt3bl33d3r for TLS version
+	— Removed option to set chunk size for file downloads
+	— Fix for #729 (Unable to download files with spaces)
+	— Fix renegotiation in powershell agent. Patched python agent to exit on 401 response.
+	— Fix for #774 (Fix pyinstaller module)
+	— Added resource scripts capability (Carrie Roberts)
+	— Fix for #749 (Fix external agent modules)
+	— Fix for #369 (Fixed http_hop listener with ssl and self-signed certificate)
+	— Merge Invoke-PowerDump fix
+	— Merge fixes for 718 (Fix generate function signature for module @nikaiw)
+	— Merge fixes for 762 (Code cleanup from EmPyre @elitest)
+	— Merge ntds execution module (@hightopfade)
+	— Updated generate function signatures in all modules
+	— Fixed stagerURI option (rvrsh3ll)
+
+10/12/2017
 --------
-- Fix Eternal Blue Issue #656
-- Merge Invoke-Kerberoast: Print hashes only. Formatting with a text editor is no longer required. #663
-- Fix Macro syntax error per @utkusen issue #664 
+- Version 2.2 Master Release
+	- Update crontab to work hourly #667
+	- Update keylogger to log to disk on server side by @clr2of8 
+	- Fix macro launcher #681
+	- Fixes vbscript string literal quoting. #702
+	- Add option to host a stager payload in the http listener @424f424f
+	- Add @enigma0x3 Token Manipulation script as a BypassUAC module @424f424f
+	- Hide true host name when using domain fronting #730 @clr2of8
+	- Fixed custom proxy config in launcher code #728 @dirkjanm
+	- generate_upload function added to Stagers #722 @hightopfade
+	- Aes kerberoast #725 @elitest
+	- DBX Improvements (SOCKS, Hide window via WindowHandler) #721 @IljaSchumacher
+	- Improved ScriptBlock logging bypasses #740 @cobbr_io
+	- Slack Integration - Notification for new Agents #737 @dchrastil
+	- Improve Get-ChromeDump #734 @ThePirateWhoSmellsOfSunFlowers
+	- Fix Eternal Blue Issue #656
+	- Merge Invoke-Kerberoast: Print hashes only. Formatting with a text editor is no longer required. #663
+	- Fix Macro syntax error per @utkusen issue #664 
+	- Fix Better powershell install, obfuscation bug fixes, fixed vbs/macro launchers #686 @cobbr
+	- Fix creds manual add parsing with whitespace in password
+	- Fix validate length parameter attribute for Invoke-PSInject.ps1d
 
 8/28/2017
 --------
